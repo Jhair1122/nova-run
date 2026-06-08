@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contacto</title>
+    <meta name="description" content="Contáctanos para consultas, pedidos personalizados o soporte." />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- NAVEGACIÓN -->
+    <nav class="nav">
+      <a href="index.html" class="nav-logo">APEX<span>KICKS</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html#catalogo">Catálogo</a></li>
+        <li><a href="index.html#nosotros">Nosotros</a></li>
+        <li><a href="contacto.html" class="active">Contacto</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="index.html" class="btn-outline" style="font-size: 0.75rem; padding: 0.5rem 1.25rem;">
+          ← Volver a tienda
+        </a>
+      </div>
+    </nav>
+
+    <!-- HERO CONTACTO -->
+    <div class="contact-hero">
+      <div class="section-label">Estamos aquí</div>
+      <h1 class="section-title" style="font-size: clamp(3rem, 6vw, 5rem);">
+        Habla<br />con nosotros.
+      </h1>
+      <p style="color: var(--gray-1); margin-top: 1rem; font-size: 0.9rem; max-width: 480px; line-height: 1.7;">
+        ¿Tienes una pregunta sobre tallas, un pedido corporativo o quieres ser distribuidor? Escríbenos y te respondemos en menos de 24 horas.
+      </p>
+    </div>
+
+    <!-- LAYOUT: INFO + FORMULARIO -->
+    <div class="contact-layout">
+      <!-- INFORMACIÓN -->
+      <div class="contact-info">
+        <h3>Información de contacto</h3>
+        <p>
+          Nuestro equipo está disponible de lunes a sábado de 9:00 a 18:00. Para urgencias, también puedes escribirnos por WhatsApp.
+        </p>
+
+        <div class="contact-detail">
+          <div class="contact-detail-item">
+            <span class="contact-detail-icon">📍</span>
+            <div class="contact-detail-text">
+              <strong>Dirección</strong>
+              <span>Av. Javier Prado Este 123, Lima, Perú</span>
+            </div>
+          </div>
+          <div class="contact-detail-item">
+            <span class="contact-detail-icon">📞</span>
+            <div class="contact-detail-text">
+              <strong>Teléfono</strong>
+              <span>+51 999 888 777</span>
+            </div>
+          </div>
+          <div class="contact-detail-item">
+            <span class="contact-detail-icon">✉️</span>
+            <div class="contact-detail-text">
+              <strong>Email</strong>
+              <span>hola@apexkicks.pe</span>
+            </div>
+          </div>
+          <div class="contact-detail-item">
+            <span class="contact-detail-icon">🕐</span>
+            <div class="contact-detail-text">
+              <strong>Horario</strong>
+              <span>Lun–Sáb, 9:00 – 18:00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Redes sociales -->
+        <div style="margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--gray-2);">
+          <p style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--gray-1); margin-bottom: 1rem;">
+            Síguenos
+          </p>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="#" class="btn-outline" style="font-size: 0.72rem; padding: 0.4rem 1rem;">Instagram</a>
+            <a href="#" class="btn-outline" style="font-size: 0.72rem; padding: 0.4rem 1rem;">TikTok</a>
+            <a href="#" class="btn-outline" style="font-size: 0.72rem; padding: 0.4rem 1rem;">Facebook</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORMULARIO -->
+      <div>
+        <form id="contact-form" class="contact-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="nombre">Nombre completo *</label>
+              <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                placeholder="Tu nombre"
+                required
+                autocomplete="name"
+              />
+            </div>
+            <div class="form-group">
+              <label for="email">Correo electrónico *</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="tu@email.com"
+                required
+                autocomplete="email"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="asunto">Asunto *</label>
+            <select id="asunto" name="asunto" required>
+              <option value="" disabled selected>Selecciona un motivo</option>
+              <option value="Consulta de producto">Consulta de producto</option>
+              <option value="Estado de pedido">Estado de pedido</option>
+              <option value="Cambios y devoluciones">Cambios y devoluciones</option>
+              <option value="Pedido corporativo">Pedido corporativo</option>
+              <option value="Distribución">Quiero ser distribuidor</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="mensaje">Mensaje *</label>
+            <textarea
+              id="mensaje"
+              name="mensaje"
+              placeholder="Cuéntanos en qué te podemos ayudar..."
+              required
+            ></textarea>
+          </div>
+
+          <div id="form-feedback" class="feedback"></div>
+
+          <button type="submit" id="submit-btn" class="btn-primary">
+            Enviar mensaje →
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo">APEX<span>KICKS</span></a>
+        <p class="footer-desc">
+          Zapatillas de rendimiento y estilo para quienes van siempre un paso adelante.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>Productos</h4>
+        <ul>
+          <li><a href="index.html#catalogo">Running</a></li>
+          <li><a href="index.html#catalogo">Casual</a></li>
+          <li><a href="index.html#catalogo">Basketball</a></li>
+          <li><a href="index.html#catalogo">Trail</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Empresa</h4>
+        <ul>
+          <li><a href="index.html#nosotros">Nosotros</a></li>
+          <li><a href="contacto.html">Contacto</a></li>
+          <li><a href="#">Blog</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Ayuda</h4>
+        <ul>
+          <li><a href="#">Envíos</a></li>
+          <li><a href="#">Devoluciones</a></li>
+          <li><a href="#">Guía de tallas</a></li>
+        </ul>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 APEXKICKS. Todos los derechos reservados.</p>
+        <p>Hecho con 🔥 en Perú</p>
+      </div>
+    </footer>
+
+    <!-- Script de contacto (con Supabase) -->
+    <script type="module" src="js/contacto.js"></script>
+  </body>
+</html>
