@@ -5,8 +5,8 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 // ——— CONFIGURACIÓN (mismos valores que supabase-client.js) ———
-const SUPABASE_URL = "https://tmqpawykchvrfjzxghhu.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcXBhd3lrY2h2cmZqenhnaGh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NTAwODAsImV4cCI6MjA5NjUyNjA4MH0.uCFWG1VFeZsTY2VV9DZFCavmTlB_Atr177Q5wwpacVM";
+const SUPABASE_URL = "https://TU_PROYECTO.supabase.co";
+const SUPABASE_ANON_KEY = "TU_ANON_KEY_AQUI";
 // ——————————————————————————————————————————————————————————
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -156,18 +156,47 @@ function getTallasSeleccionadas() {
     .map(c => parseInt(c.dataset.talla));
 }
 
-// Previsualización de imagen
-document.getElementById("f-imagen").addEventListener("input", e => {
-  const url = e.target.value.trim();
-  const wrap = document.getElementById("img-preview-wrap");
-  const img  = document.getElementById("img-preview");
-  if (url) {
-    img.src = url;
-    wrap.style.display = "block";
-    img.onerror = () => { wrap.style.display = "none"; };
-  } else {
-    wrap.style.display = "none";
+// Subida de imagen a Supabase Storage
+const BUCKET_NAME = "productos"; // nombre del bucket en Supabase Storage
+
+document.getElementById("f-imagen-file").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  const status = document.getElementById("upload-status");
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    status.textContent = "La imagen no debe superar 5MB.";
+    status.className = "upload-status error";
+    e.target.value = "";
+    return;
   }
+
+  status.textContent = "Subiendo imagen…";
+  status.className = "upload-status loading";
+
+  const ext = file.name.split(".").pop();
+  const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { error: uploadError } = await sb.storage
+    .from(BUCKET_NAME)
+    .upload(fileName, file, { cacheControl: "3600", upsert: false });
+
+  if (uploadError) {
+    status.textContent = "Error al subir: " + uploadError.message;
+    status.className = "upload-status error";
+    e.target.value = "";
+    return;
+  }
+
+  const { data: urlData } = sb.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+  const publicUrl = urlData.publicUrl;
+
+  document.getElementById("f-imagen").value = publicUrl;
+  document.getElementById("img-preview").src = publicUrl;
+  document.getElementById("img-preview-wrap").style.display = "block";
+
+  status.textContent = "✓ Imagen subida correctamente";
+  status.className = "upload-status success";
 });
 
 function abrirNuevo() {
@@ -180,6 +209,9 @@ function abrirNuevo() {
   document.getElementById("f-precio-antes").value = "";
   document.getElementById("f-descripcion").value = "";
   document.getElementById("f-imagen").value = "";
+  document.getElementById("f-imagen-file").value = "";
+  document.getElementById("upload-status").textContent = "";
+  document.getElementById("upload-status").className = "upload-status";
   document.getElementById("f-nuevo").checked = false;
   document.getElementById("f-destacado").checked = false;
   document.getElementById("img-preview-wrap").style.display = "none";
@@ -200,6 +232,9 @@ window.abrirEditar = function(id) {
   document.getElementById("f-precio-antes").value = p.precio_antes || "";
   document.getElementById("f-descripcion").value = p.descripcion || "";
   document.getElementById("f-imagen").value = p.imagen || "";
+  document.getElementById("f-imagen-file").value = "";
+  document.getElementById("upload-status").textContent = p.imagen ? "Imagen actual cargada" : "";
+  document.getElementById("upload-status").className = "upload-status";
   document.getElementById("f-nuevo").checked = !!p.nuevo;
   document.getElementById("f-destacado").checked = !!p.destacado;
   document.getElementById("modal-error").style.display = "none";
