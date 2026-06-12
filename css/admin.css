@@ -603,6 +603,25 @@ tbody td {
 
 .span-2 { grid-column: span 2; }
 
+.upload-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.upload-btn {
+  cursor: pointer;
+}
+
+.upload-status {
+  font-size: 0.75rem;
+  color: var(--gray-1);
+}
+
+.upload-status.success { color: var(--success); }
+.upload-status.error { color: var(--danger); }
+.upload-status.loading { color: var(--accent); }
+
 /* TALLAS */
 .tallas-grid {
   display: flex;
