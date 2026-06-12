@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="admin.css" />
   </head>
   <body>
 
@@ -199,8 +199,13 @@
               <textarea id="f-descripcion" rows="3" placeholder="Descripción corta del producto…"></textarea>
             </div>
             <div class="form-group span-2">
-              <label>URL de imagen *</label>
-              <input type="url" id="f-imagen" placeholder="https://…" />
+              <label>Imagen del producto *</label>
+              <div class="upload-row">
+                <label for="f-imagen-file" class="btn btn-ghost upload-btn">📁 Elegir imagen</label>
+                <input type="file" id="f-imagen-file" accept="image/*" style="display:none" />
+                <span id="upload-status" class="upload-status"></span>
+              </div>
+              <input type="hidden" id="f-imagen" />
               <div id="img-preview-wrap" style="margin-top:0.75rem; display:none">
                 <img id="img-preview" style="height:120px; object-fit:cover; border-radius:4px; border:1px solid var(--border)" />
               </div>
@@ -262,6 +267,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/admin.js"></script>
+    <script type="module" src="admin.js"></script>
   </body>
 </html>
