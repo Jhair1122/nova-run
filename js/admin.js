@@ -5,7 +5,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 // ——— CONFIGURACIÓN (mismos valores que supabase-client.js) ———
-const SUPABASE_URL = "https://TU_PROYECTO.supabase.co";
+const SUPABASE_URL = "https://tmqpawykchvrfjzxghhu.supabase.co/rest/v1/";
 const SUPABASE_ANON_KEY = "TU_ANON_KEY_AQUI";
 // ——————————————————————————————————————————————————————————
 
