@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin — APEXKICKS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="admin.css" />
+  </head>
+  <body>
+
+    <!-- ========== LOGIN SCREEN ========== -->
+    <div id="login-screen" class="login-screen">
+      <div class="login-card">
+        <div class="login-logo">APEX<span>KICKS</span></div>
+        <p class="login-subtitle">Panel de administración</p>
+
+        <div id="login-error" class="alert alert-error" style="display:none"></div>
+
+        <div class="form-group">
+          <label>Correo</label>
+          <input type="email" id="login-email" placeholder="admin@apexkicks.pe" autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button id="login-btn" class="btn btn-accent btn-full">Ingresar</button>
+      </div>
+    </div>
+
+    <!-- ========== DASHBOARD ========== -->
+    <div id="dashboard" class="dashboard" style="display:none">
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">APEX<span>KICKS</span><br/><small>Admin</small></div>
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-tab="productos">
+            <span class="nav-icon">👟</span> Productos
+          </button>
+          <button class="nav-item" data-tab="mensajes">
+            <span class="nav-icon">✉️</span> Mensajes
+            <span id="badge-mensajes" class="nav-badge" style="display:none">0</span>
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div id="admin-email-label" class="admin-email"></div>
+          <button id="logout-btn" class="btn btn-ghost btn-full">Cerrar sesión</button>
+          <a href="../index.html" class="btn btn-ghost btn-full" style="margin-top:0.5rem; display:block; text-align:center;">
+            ← Ver tienda
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="main-content">
+
+        <!-- ===== TAB: PRODUCTOS ===== -->
+        <div id="tab-productos" class="tab-content active">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Productos</h1>
+              <p class="page-desc">Gestiona el catálogo de zapatillas</p>
+            </div>
+            <button class="btn btn-accent" id="btn-nuevo-producto">+ Nuevo producto</button>
+          </div>
+
+          <!-- Stats rápidas -->
+          <div class="stats-row" id="stats-row">
+            <div class="stat-card">
+              <div class="stat-num" id="stat-total">—</div>
+              <div class="stat-lbl">Total productos</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" id="stat-nuevos">—</div>
+              <div class="stat-lbl">Marcados como nuevo</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" id="stat-ofertas">—</div>
+              <div class="stat-lbl">En oferta</div>
+            </div>
+          </div>
+
+          <!-- Tabla -->
+          <div class="table-card">
+            <div class="table-toolbar">
+              <input type="text" id="search-productos" class="search-input" placeholder="Buscar por nombre o categoría…" />
+            </div>
+            <div class="table-wrap">
+              <table id="tabla-productos">
+                <thead>
+                  <tr>
+                    <th>Imagen</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Precio antes</th>
+                    <th>Tallas</th>
+                    <th>Flags</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-productos">
+                  <tr><td colspan="8" class="table-empty">Cargando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== TAB: MENSAJES ===== -->
+        <div id="tab-mensajes" class="tab-content">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Mensajes</h1>
+              <p class="page-desc">Consultas recibidas desde el formulario de contacto</p>
+            </div>
+            <button class="btn btn-ghost" id="btn-marcar-todos">Marcar todos como leídos</button>
+          </div>
+
+          <div class="table-card">
+            <div class="table-toolbar">
+              <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="todos">Todos</button>
+                <button class="filter-tab" data-filter="no-leidos">No leídos</button>
+                <button class="filter-tab" data-filter="leidos">Leídos</button>
+              </div>
+              <input type="text" id="search-mensajes" class="search-input" placeholder="Buscar por nombre o email…" />
+            </div>
+            <div class="table-wrap">
+              <table id="tabla-mensajes">
+                <thead>
+                  <tr>
+                    <th>Estado</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Asunto</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-mensajes">
+                  <tr><td colspan="6" class="table-empty">Cargando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ========== MODAL PRODUCTO ========== -->
+    <div id="modal-overlay" class="modal-overlay" style="display:none">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="modal-title" class="modal-title">Nuevo producto</h2>
+          <button class="modal-close" id="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="modal-error" class="alert alert-error" style="display:none"></div>
+
+          <div class="form-grid">
+            <div class="form-group span-2">
+              <label>Nombre del producto *</label>
+              <input type="text" id="f-nombre" placeholder="Ej: APEX RUN PRO" />
+            </div>
+            <div class="form-group">
+              <label>Categoría *</label>
+              <select id="f-categoria">
+                <option value="">Seleccionar…</option>
+                <option value="Running">Running</option>
+                <option value="Casual">Casual</option>
+                <option value="Basketball">Basketball</option>
+                <option value="Trail">Trail</option>
+                <option value="Fútbol">Fútbol</option>
+                <option value="Skate">Skate</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Color</label>
+              <input type="text" id="f-color" placeholder="Ej: Negro / Naranja" />
+            </div>
+            <div class="form-group">
+              <label>Precio (S/) *</label>
+              <input type="number" id="f-precio" min="0" step="0.01" placeholder="0.00" />
+            </div>
+            <div class="form-group">
+              <label>Precio anterior (S/) <small>— dejar vacío si no hay oferta</small></label>
+              <input type="number" id="f-precio-antes" min="0" step="0.01" placeholder="0.00" />
+            </div>
+            <div class="form-group span-2">
+              <label>Descripción *</label>
+              <textarea id="f-descripcion" rows="3" placeholder="Descripción corta del producto…"></textarea>
+            </div>
+            <div class="form-group span-2">
+              <label>URL de imagen *</label>
+              <input type="url" id="f-imagen" placeholder="https://…" />
+              <div id="img-preview-wrap" style="margin-top:0.75rem; display:none">
+                <img id="img-preview" style="height:120px; object-fit:cover; border-radius:4px; border:1px solid var(--border)" />
+              </div>
+            </div>
+            <div class="form-group span-2">
+              <label>Tallas disponibles <small>— selecciona una o varias</small></label>
+              <div class="tallas-grid" id="tallas-grid">
+                <!-- generadas por JS -->
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="f-nuevo" />
+                <span>Marcar como NUEVO</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="f-destacado" />
+                <span>Producto destacado</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="btn-cancelar-modal">Cancelar</button>
+          <button class="btn btn-accent" id="btn-guardar-producto">Guardar producto</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== MODAL MENSAJE ========== -->
+    <div id="modal-mensaje-overlay" class="modal-overlay" style="display:none">
+      <div class="modal modal-sm">
+        <div class="modal-header">
+          <h2 class="modal-title">Mensaje recibido</h2>
+          <button class="modal-close" id="modal-mensaje-close">✕</button>
+        </div>
+        <div class="modal-body" id="modal-mensaje-body">
+          <!-- contenido dinámico -->
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="btn-cerrar-mensaje">Cerrar</button>
+          <a id="btn-responder-email" href="#" class="btn btn-accent">Responder por email</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== CONFIRM DIALOG ========== -->
+    <div id="confirm-overlay" class="modal-overlay" style="display:none">
+      <div class="modal modal-xs">
+        <div class="modal-body" style="padding-top:1.75rem">
+          <p id="confirm-text" style="font-size:0.95rem; line-height:1.6; margin-bottom:1.5rem"></p>
+          <div style="display:flex; gap:0.75rem; justify-content:flex-end">
+            <button class="btn btn-ghost" id="confirm-no">Cancelar</button>
+            <button class="btn btn-danger" id="confirm-yes">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="admin.js"></script>
+  </body>
+</html>
