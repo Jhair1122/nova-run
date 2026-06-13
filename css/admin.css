@@ -390,6 +390,78 @@ tbody td {
 .tag-sale { background: var(--accent-dim); color: var(--accent); }
 .tag-featured { background: rgba(245,158,11,0.12); color: var(--warning); }
 
+/* PEDIDOS: filtros y badges de estado */
+.filter-tab-pedido {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--gray-1);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--t);
+}
+
+.filter-tab-pedido:hover { border-color: var(--gray-1); color: var(--white); }
+.filter-tab-pedido.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.estado-pendiente { background: var(--warning-bg); color: var(--warning); }
+.estado-pagado    { background: rgba(99,102,241,0.12); color: #818cf8; }
+.estado-enviado   { background: var(--success-bg); color: var(--success); }
+.estado-cancelado { background: var(--danger-bg); color: var(--danger); }
+
+/* Detalle de pedido */
+.pedido-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.pedido-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--bg-3);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.pedido-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--gray-1);
+}
+
+.pedido-item-row span:first-child { color: var(--white); }
+
+.pedido-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.25rem;
+}
+
 .badge-leido {
   display: inline-block;
   width: 8px; height: 8px;
