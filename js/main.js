@@ -424,24 +424,31 @@ function mostrarConfirmacion(codigo, cliente) {
   document.getElementById("yape-numero").textContent = YAPE_NUMERO;
   document.getElementById("yape-nombre").textContent = `A nombre de: ${YAPE_NOMBRE}`;
 
+  const DIVIDER = "\u2500".repeat(24); // línea divisoria ─────────────────────
+
   const itemsTexto = cliente.items
-    .map((item, i) => `${i + 1}. ${item.nombre} · Talla ${item.talla} · x${item.cantidad} · S/ ${(item.precio * item.cantidad).toFixed(2)}`)
+    .map((item, i) =>
+      `${i + 1}. ${item.nombre}\n` +
+      `    Talla ${item.talla}  x${item.cantidad}  —  S/ ${(item.precio * item.cantidad).toFixed(2)}`
+    )
     .join("\n");
 
   const mensaje =
-`🛍️ *NUEVO PEDIDO #${codigo} — APEXKICKS*
-
-👤 Cliente: ${cliente.nombre}
-📞 Teléfono: ${cliente.telefono}
-📍 Dirección: ${cliente.direccion}${cliente.referencia ? `\n📝 Referencia: ${cliente.referencia}` : ""}
-
-🧾 *Productos:*
+`*PEDIDO #${codigo}*
+_APEXKICKS_
+${DIVIDER}
+*Cliente:* ${cliente.nombre}
+*Teléfono:* ${cliente.telefono}
+*Dirección:* ${cliente.direccion}${cliente.referencia ? `\n*Referencia:* ${cliente.referencia}` : ""}
+${DIVIDER}
+*Productos*
 ${itemsTexto}
-
-💰 *Total: S/ ${cliente.total.toFixed(2)}*
-
-💳 *Pago por Yape*
-Voy a yapear a ${YAPE_NUMERO} (${YAPE_NOMBRE}) y enviaré la captura de mi pago aquí mismo, indicando el código *#${codigo}*.`;
+${DIVIDER}
+*TOTAL: S/ ${cliente.total.toFixed(2)}*
+${DIVIDER}
+*Pago por Yape*
+Enviaré S/ ${cliente.total.toFixed(2)} a *${YAPE_NUMERO}* (${YAPE_NOMBRE}).
+Adjuntaré la captura del pago en este chat indicando el código *#${codigo}*.`;
 
   const url = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
   document.getElementById("btn-whatsapp").href = url;
