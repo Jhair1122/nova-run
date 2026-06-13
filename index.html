@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Zapatillas de Alto Rendimiento</title>
+    <title>APEXKICKS — Zapatillas de Alto Rendimiento</title>
     <meta
       name="description"
       content="Zapatillas premium para atletas y amantes del street style. Running, Basketball, Trail y más."
@@ -30,7 +30,7 @@
       </ul>
       <div class="nav-actions">
         <button class="cart-btn" onclick="toggleCarrito()">
-          🛒 Carrito
+          🛍️ Mi Pedido
           <span id="cart-count">0</span>
         </button>
       </div>
@@ -69,6 +69,8 @@
         </div>
       </div>
       <div class="hero-visual">
+        <div class="hero-blob blob-1"></div>
+        <div class="hero-blob blob-2"></div>
         <img
           src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900&q=80"
           alt="Zapatilla APEX RUN PRO"
@@ -168,16 +170,19 @@
         </ul>
       </div>
       <div class="footer-bottom">
-        <p>© 2026. Todos los derechos reservados.</p>
+        <p>© 2025 APEXKICKS. Todos los derechos reservados.</p>
         <p>Hecho con 🔥 en Perú</p>
       </div>
     </footer>
 
-    <!-- CARRITO PANEL -->
+    <!-- PANEL "MI PEDIDO" -->
     <div id="cart-overlay" class="cart-overlay"></div>
     <aside id="cart-panel" class="cart-panel">
       <div class="cart-header">
-        <h3>Tu carrito</h3>
+        <div>
+          <h3>Mi Pedido</h3>
+          <div class="cart-header-sub">Selecciona, ajusta y envía tu pedido</div>
+        </div>
         <button class="cart-close" onclick="toggleCarrito()">✕</button>
       </div>
       <div id="cart-items"></div>
@@ -186,11 +191,94 @@
           <span class="cart-total-label">Total</span>
           <span id="cart-total">S/ 0.00</span>
         </div>
-        <button class="btn-checkout" onclick="alert('¡Función de pago próximamente!')">
-          Finalizar compra →
+        <button id="btn-iniciar-pedido" class="btn-checkout">
+          Continuar pedido →
         </button>
+        <p class="cart-footer-note">
+          No se realiza ningún cobro aquí. En el siguiente paso coordinarás
+          el pago por Yape directamente con nosotros vía WhatsApp.
+        </p>
       </div>
     </aside>
+
+    <!-- MODAL: DATOS DE ENVÍO -->
+    <div id="checkout-overlay" class="store-modal-overlay">
+      <div class="store-modal">
+        <div class="store-modal-header">
+          <h2 class="store-modal-title">Datos de envío</h2>
+          <button class="store-modal-close" id="checkout-close">✕</button>
+        </div>
+        <div class="store-modal-body">
+          <div id="order-summary" class="order-summary"></div>
+
+          <div class="form-group">
+            <label for="ck-nombre">Nombre completo *</label>
+            <input type="text" id="ck-nombre" placeholder="Tu nombre y apellido" />
+          </div>
+          <div class="form-group">
+            <label for="ck-telefono">Teléfono / WhatsApp *</label>
+            <input type="tel" id="ck-telefono" placeholder="9xx xxx xxx" />
+          </div>
+          <div class="form-group">
+            <label for="ck-direccion">Dirección de entrega *</label>
+            <input type="text" id="ck-direccion" placeholder="Calle, número, distrito" />
+          </div>
+          <div class="form-group">
+            <label for="ck-referencia">Referencia / notas <small>(opcional)</small></label>
+            <textarea id="ck-referencia" rows="2" placeholder="Ej: casa de dos pisos, color azul, cerca al mercado..."></textarea>
+          </div>
+
+          <div id="checkout-error" class="feedback error" style="display:none"></div>
+        </div>
+        <div class="store-modal-footer">
+          <button class="btn-outline" id="checkout-cancelar" style="padding:0.75rem 1.5rem">Cancelar</button>
+          <button class="btn-primary" id="checkout-enviar" style="padding:0.75rem 1.75rem">Continuar →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CONFIRMACIÓN + PAGO YAPE -->
+    <div id="confirm-overlay" class="store-modal-overlay">
+      <div class="store-modal">
+        <div class="store-modal-header">
+          <h2 class="store-modal-title">¡Pedido registrado!</h2>
+          <button class="store-modal-close" id="confirm-close">✕</button>
+        </div>
+        <div class="store-modal-body">
+          <div class="confirm-code-box">
+            <div class="confirm-code-label">Tu código de pedido</div>
+            <div class="confirm-code-value" id="confirm-code">—</div>
+          </div>
+
+          <div class="yape-box">
+            <h4>💜 Pagar con Yape</h4>
+            <div class="yape-number" id="yape-numero">999 888 777</div>
+            <div class="yape-name" id="yape-nombre">A nombre de: Jhair Urbina</div>
+          </div>
+
+          <ol class="confirm-steps">
+            <li><span class="step-num">1</span> Te llevaremos a WhatsApp con tu pedido ya redactado. Solo debes pulsar <strong>enviar</strong>.</li>
+            <li><span class="step-num">2</span> Realiza el Yape por el monto exacto de <strong id="confirm-total">S/ 0.00</strong> al número mostrado arriba.</li>
+            <li><span class="step-num">3</span> Toma una captura de tu Yape (donde se vea el monto, la hora y el código de operación) y <strong>envíala por el mismo chat de WhatsApp</strong>, mencionando tu código de pedido <strong id="confirm-code-inline">—</strong>.</li>
+            <li><span class="step-num">4</span> Confirmaremos tu pago manualmente y coordinaremos la entrega.</li>
+          </ol>
+
+          <div class="fraud-warning">
+            <span>⚠️</span>
+            <span>
+              Por seguridad: solo se confirman pagos verificados directamente en la app Yape del vendedor.
+              No aceptamos capturas editadas ni comprobantes de "Yapeo programado" o enlaces externos.
+              Si tienes dudas sobre el monto o el número antes de pagar, pregúntanos primero por WhatsApp.
+            </span>
+          </div>
+        </div>
+        <div class="store-modal-footer" style="flex-direction:column; align-items:stretch;">
+          <a id="btn-whatsapp" href="#" target="_blank" class="btn-whatsapp">
+            💬 Abrir WhatsApp y enviar pedido
+          </a>
+        </div>
+      </div>
+    </div>
 
     <!-- TOAST -->
     <div id="toast"></div>
