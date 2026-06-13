@@ -5,8 +5,8 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 // ——— CONFIGURACIÓN (mismos valores que supabase-client.js) ———
-const SUPABASE_URL = "https://tmqpawykchvrfjzxghhu.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcXBhd3lrY2h2cmZqenhnaGh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NTAwODAsImV4cCI6MjA5NjUyNjA4MH0.uCFWG1VFeZsTY2VV9DZFCavmTlB_Atr177Q5wwpacVM";
+const SUPABASE_URL = "https://TU_PROYECTO.supabase.co";
+const SUPABASE_ANON_KEY = "TU_ANON_KEY_AQUI";
 // ——————————————————————————————————————————————————————————
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -18,8 +18,11 @@ const TALLAS_DISPONIBLES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46];
 // =============================================
 let productosCache = [];
 let mensajesCache = [];
+let pedidosCache = [];
 let editandoId = null;       // null = nuevo, uuid = editar
 let filtroMensajes = "todos";
+let filtroPedidos = "todos";
+let pedidoAbiertoId = null;
 
 // =============================================
 // AUTH
@@ -59,6 +62,7 @@ function mostrarDashboard(email) {
   document.getElementById("dashboard").style.display = "flex";
   document.getElementById("admin-email-label").textContent = email;
   cargarProductos();
+  cargarPedidos();
   cargarMensajes();
 }
 
@@ -314,9 +318,17 @@ document.getElementById("btn-guardar-producto").addEventListener("click", async 
 // PRODUCTOS — ELIMINAR
 // =============================================
 let pendingDeleteId = null;
+let confirmCallback = null;
 
 window.confirmarEliminar = function(id, nombre) {
   pendingDeleteId = id;
+  confirmCallback = async () => {
+    const { error } = await sb.from("productos").delete().eq("id", pendingDeleteId);
+    if (!error) {
+      pendingDeleteId = null;
+      cargarProductos();
+    }
+  };
   document.getElementById("confirm-text").textContent =
     `¿Eliminar el producto "${nombre}"? Esta acción no se puede deshacer.`;
   document.getElementById("confirm-overlay").style.display = "flex";
@@ -325,17 +337,204 @@ window.confirmarEliminar = function(id, nombre) {
 document.getElementById("confirm-no").addEventListener("click", () => {
   document.getElementById("confirm-overlay").style.display = "none";
   pendingDeleteId = null;
+  confirmCallback = null;
 });
 
 document.getElementById("confirm-yes").addEventListener("click", async () => {
-  if (!pendingDeleteId) return;
-  const { error } = await sb.from("productos").delete().eq("id", pendingDeleteId);
+  if (!confirmCallback) return;
+  await confirmCallback();
+  document.getElementById("confirm-overlay").style.display = "none";
+  confirmCallback = null;
+});
+
+// =============================================
+// PEDIDOS — CARGAR
+// =============================================
+async function cargarPedidos() {
+  const { data, error } = await sb.from("pedidos").select("*").order("creado_en", { ascending: false });
+  if (error) { console.error(error); return; }
+
+  pedidosCache = data || [];
+  actualizarStatsPedidos();
+  actualizarBadgePedidos();
+  renderTablaPedidos();
+}
+
+function actualizarStatsPedidos() {
+  const pendientes = pedidosCache.filter(p => p.estado === "pendiente").length;
+  const pagados = pedidosCache.filter(p => p.estado === "pagado").length;
+  document.getElementById("stat-pedidos-pendientes").textContent = pendientes;
+  document.getElementById("stat-pedidos-pagados").textContent = pagados;
+  document.getElementById("stat-pedidos-total").textContent = pedidosCache.length;
+}
+
+function actualizarBadgePedidos() {
+  const pendientes = pedidosCache.filter(p => p.estado === "pendiente").length;
+  const badge = document.getElementById("badge-pedidos");
+  badge.textContent = pendientes;
+  badge.style.display = pendientes > 0 ? "inline-block" : "none";
+}
+
+const ESTADO_LABELS = {
+  pendiente: "Pendiente",
+  pagado: "Pagado",
+  enviado: "Enviado",
+  cancelado: "Cancelado",
+};
+
+function renderTablaPedidos() {
+  let lista = pedidosCache;
+  if (filtroPedidos !== "todos") lista = lista.filter(p => p.estado === filtroPedidos);
+
+  const q = document.getElementById("search-pedidos").value.toLowerCase();
+  if (q) lista = lista.filter(p =>
+    p.id.toLowerCase().includes(q) ||
+    (p.cliente_nombre || "").toLowerCase().includes(q) ||
+    (p.cliente_telefono || "").toLowerCase().includes(q)
+  );
+
+  const tbody = document.getElementById("tbody-pedidos");
+  if (lista.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="table-empty">No hay pedidos en esta categoría.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(p => {
+    const codigo = p.id.slice(0, 8).toUpperCase();
+    const estado = p.estado || "pendiente";
+    return `
+    <tr>
+      <td><strong>#${codigo}</strong></td>
+      <td>${escHtml(p.cliente_nombre)}</td>
+      <td style="color:var(--gray-1)">${escHtml(p.cliente_telefono)}</td>
+      <td>S/ ${Number(p.total).toFixed(2)}</td>
+      <td><span class="estado-badge estado-${estado}">${ESTADO_LABELS[estado] || estado}</span></td>
+      <td style="color:var(--gray-1); white-space:nowrap">${formatFecha(p.creado_en)}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-icon" onclick="abrirPedido('${p.id}')">👁️ Ver</button>
+          <button class="btn btn-icon danger" onclick="confirmarEliminarPedido('${p.id}', '${codigo}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `;
+  }).join("");
+}
+
+document.querySelectorAll(".filter-tab-pedido").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-tab-pedido").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    filtroPedidos = btn.dataset.filter;
+    renderTablaPedidos();
+  });
+});
+
+document.getElementById("search-pedidos").addEventListener("input", renderTablaPedidos);
+
+// =============================================
+// PEDIDOS — VER DETALLE / CAMBIAR ESTADO
+// =============================================
+window.abrirPedido = function (id) {
+  const p = pedidosCache.find(x => x.id === id);
+  if (!p) return;
+  pedidoAbiertoId = id;
+  const codigo = p.id.slice(0, 8).toUpperCase();
+  const items = Array.isArray(p.items) ? p.items : [];
+
+  document.getElementById("modal-pedido-body").innerHTML = `
+    <div class="confirm-code-box" style="margin-bottom:1.25rem;">
+      <div class="confirm-code-label">Código de pedido</div>
+      <div class="confirm-code-value">#${codigo}</div>
+    </div>
+
+    <div class="pedido-meta">
+      <div class="msg-field">
+        <span class="msg-field-label">Cliente</span>
+        <span class="msg-field-val">${escHtml(p.cliente_nombre)}</span>
+      </div>
+      <div class="msg-field">
+        <span class="msg-field-label">Teléfono</span>
+        <span class="msg-field-val">${escHtml(p.cliente_telefono)}</span>
+      </div>
+      <div class="msg-field" style="grid-column: span 2;">
+        <span class="msg-field-label">Dirección de entrega</span>
+        <span class="msg-field-val">${escHtml(p.cliente_direccion)}</span>
+      </div>
+      ${p.cliente_referencia ? `
+      <div class="msg-field" style="grid-column: span 2;">
+        <span class="msg-field-label">Referencia</span>
+        <span class="msg-field-val">${escHtml(p.cliente_referencia)}</span>
+      </div>` : ""}
+      <div class="msg-field">
+        <span class="msg-field-label">Fecha</span>
+        <span class="msg-field-val">${formatFecha(p.creado_en, true)}</span>
+      </div>
+      <div class="msg-field">
+        <span class="msg-field-label">Método de pago</span>
+        <span class="msg-field-val">${escHtml(p.metodo_pago || "Yape")}</span>
+      </div>
+    </div>
+
+    <div class="pedido-items">
+      ${items.map(it => `
+        <div class="pedido-item-row">
+          <span>${escHtml(it.nombre)} · Talla ${it.talla} × ${it.cantidad}</span>
+          <span>S/ ${(it.precio * it.cantidad).toFixed(2)}</span>
+        </div>
+      `).join("")}
+      <div class="pedido-total-row">
+        <span>Total</span>
+        <span>S/ ${Number(p.total).toFixed(2)}</span>
+      </div>
+    </div>
+
+    <div class="fraud-warning">
+      <span>💜</span>
+      <span>
+        Verifica este pago directamente en tu app Yape (monto, hora y código de operación)
+        antes de marcarlo como "Pagado". No confirmes con base solo en una captura.
+      </span>
+    </div>
+  `;
+
+  document.getElementById("pedido-estado-select").value = p.estado || "pendiente";
+  document.getElementById("modal-pedido-overlay").style.display = "flex";
+};
+
+document.getElementById("modal-pedido-close").addEventListener("click", () => {
+  document.getElementById("modal-pedido-overlay").style.display = "none";
+  pedidoAbiertoId = null;
+});
+document.getElementById("btn-cerrar-pedido").addEventListener("click", () => {
+  document.getElementById("modal-pedido-overlay").style.display = "none";
+  pedidoAbiertoId = null;
+});
+
+document.getElementById("btn-guardar-estado-pedido").addEventListener("click", async () => {
+  if (!pedidoAbiertoId) return;
+  const nuevoEstado = document.getElementById("pedido-estado-select").value;
+
+  const { error } = await sb.from("pedidos").update({ estado: nuevoEstado }).eq("id", pedidoAbiertoId);
   if (!error) {
-    document.getElementById("confirm-overlay").style.display = "none";
-    pendingDeleteId = null;
-    cargarProductos();
+    document.getElementById("modal-pedido-overlay").style.display = "none";
+    pedidoAbiertoId = null;
+    cargarPedidos();
   }
 });
+
+// =============================================
+// PEDIDOS — ELIMINAR
+// =============================================
+window.confirmarEliminarPedido = function (id, codigo) {
+  confirmCallback = async () => {
+    const { error } = await sb.from("pedidos").delete().eq("id", id);
+    if (!error) cargarPedidos();
+  };
+  document.getElementById("confirm-text").textContent =
+    `¿Eliminar el pedido #${codigo}? Esta acción no se puede deshacer.`;
+  document.getElementById("confirm-overlay").style.display = "flex";
+};
 
 // =============================================
 // MENSAJES — CARGAR
