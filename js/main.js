@@ -8,7 +8,7 @@ import { supabase } from "./supabase-client.js";
 // =============================================
 // ⚙️ CONFIGURACIÓN — EDITA ESTOS DATOS
 // =============================================
-const WHATSAPP_NUMERO = "+51 900907810"; // código de país + número, sin + ni espacios
+const WHATSAPP_NUMERO = "51900907810"; // código de país + número, sin + ni espacios
 const YAPE_NUMERO = "900 907 810";     // número que se muestra al cliente
 const YAPE_NOMBRE = "Jhair Urbina";    // nombre del titular de Yape
 
