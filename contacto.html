@@ -29,7 +29,18 @@
         <a href="index.html" class="btn-outline" style="font-size: 0.75rem; padding: 0.5rem 1.25rem;">
           ← Volver a tienda
         </a>
+        <button class="hamburger" id="hamburger" aria-label="Menú" style="display:none">
+          <span></span><span></span><span></span>
+        </button>
       </div>
+    </nav>
+
+    <!-- MENÚ MÓVIL -->
+    <nav class="nav-mobile" id="nav-mobile">
+      <a href="index.html#catalogo">Catálogo</a>
+      <a href="index.html#nosotros">Nosotros</a>
+      <a href="contacto.html" class="active">Contacto</a>
+      <a href="index.html">← Volver a tienda</a>
     </nav>
 
     <!-- HERO CONTACTO -->
@@ -39,7 +50,7 @@
         Habla<br />con nosotros.
       </h1>
       <p style="color: var(--gray-1); margin-top: 1rem; font-size: 0.9rem; max-width: 480px; line-height: 1.7;">
-        ¿Tienes una pregunta sobre tallas, un pedido corporativo o quieres ser distribuidor? Escríbenos y te respondemos en menos de 24 horas.
+        ¿Tienes una pregunta sobre tallas? Escríbenos y te respondemos en menos de 24 horas.
       </p>
     </div>
 
@@ -185,7 +196,6 @@
         <h4>Ayuda</h4>
         <ul>
           <li><a href="#">Envíos</a></li>
-          <li><a href="#">Devoluciones</a></li>
           <li><a href="#">Guía de tallas</a></li>
         </ul>
       </div>
@@ -197,5 +207,14 @@
 
     <!-- Script de contacto (con Supabase) -->
     <script type="module" src="js/contacto.js"></script>
+    <script>
+      const _h = document.getElementById("hamburger");
+      const _nm = document.getElementById("nav-mobile");
+      const _mq = window.matchMedia("(max-width: 768px)");
+      const _tv = (e) => { _h.style.display = e.matches ? "flex" : "none"; if (!e.matches) { _h.classList.remove("open"); _nm.classList.remove("open"); } };
+      _mq.addEventListener("change", _tv); _tv(_mq);
+      _h.addEventListener("click", () => { _h.classList.toggle("open"); _nm.classList.toggle("open"); });
+      _nm.querySelectorAll("a").forEach(a => a.addEventListener("click", () => { _h.classList.remove("open"); _nm.classList.remove("open"); }));
+    </script>
   </body>
 </html>
