@@ -126,7 +126,6 @@ function renderCatalogo(lista) {
     grid.appendChild(card);
   });
 
-  initTilt3D();
   initRevealOnScroll();
 }
 
@@ -159,25 +158,7 @@ function initFiltros() {
 // =============================================
 // EFECTO 3D TILT EN TARJETAS
 // =============================================
-function initTilt3D() {
-  const cards = document.querySelectorAll(".product-card");
-  cards.forEach(card => {
-    card.addEventListener("mousemove", (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
-      const rotateY = ((x - cx) / cx) * 2;
-      const rotateX = -((y - cy) / cy) * 2;
-      card.style.transform = `perspective(1400px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
-    });
-
-    card.addEventListener("mouseleave", () => {
-      card.style.transform = "";
-    });
-  });
-}
+// Tilt 3D eliminado — solo hover de sombra/color via CSS
 
 // =============================================
 // REVEAL AL HACER SCROLL
@@ -479,7 +460,7 @@ function mostrarConfirmacion(codigo, cliente) {
 
   const mensaje =
 `*PEDIDO #${codigo}*
-_APEXKICKS_
+_NOVARUN_
 ${DIVIDER}
 *Cliente:* ${cliente.nombre}
 *Teléfono:* ${cliente.telefono}
@@ -555,6 +536,93 @@ function initHamburger() {
 }
 
 // =============================================
+// ZAPATILLA HERO — INTERACCIÓN 3D
+// =============================================
+function initSneaker3D() {
+  const scene   = document.getElementById("sneaker-scene");
+  const wrapper = document.getElementById("sneaker-wrapper");
+  const light   = wrapper?.querySelector(".sneaker-light");
+  if (!scene || !wrapper) return;
+
+  const MAX_ROT  = 14;   // grados máximos de rotación
+  const LIFT     = 12;   // px de elevación al hover
+  let animFrame  = null;
+  let targetRX   = 0, targetRY = 0;
+  let currentRX  = 0, currentRY = 0;
+  let isHovering = false;
+
+  // Lerp suavizado
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function tick() {
+    currentRX = lerp(currentRX, targetRX, 0.10);
+    currentRY = lerp(currentRY, targetRY, 0.10);
+
+    wrapper.style.animation = "none";
+    wrapper.style.transform =
+      `translateY(${isHovering ? -LIFT : 0}px) ` +
+      `rotateX(${currentRX}deg) rotateY(${currentRY}deg)`;
+
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  // Mouse en escritorio
+  scene.addEventListener("mousemove", (e) => {
+    isHovering = true;
+    const rect = scene.getBoundingClientRect();
+    const nx = (e.clientX - rect.left) / rect.width  - 0.5; // -0.5 a 0.5
+    const ny = (e.clientY - rect.top)  / rect.height - 0.5;
+
+    targetRY =  nx * MAX_ROT * 2;
+    targetRX = -ny * MAX_ROT;
+
+    // Mueve el destello según el cursor
+    if (light) {
+      const lx = Math.round((nx + 0.5) * 100);
+      const ly = Math.round((ny + 0.5) * 100);
+      light.style.background =
+        `radial-gradient(circle at ${lx}% ${ly}%, rgba(255,255,255,0.22) 0%, transparent 55%)`;
+    }
+  });
+
+  scene.addEventListener("mouseenter", () => {
+    isHovering = true;
+    if (!animFrame) tick();
+  });
+
+  scene.addEventListener("mouseleave", () => {
+    isHovering = false;
+    targetRX = 0;
+    targetRY = 0;
+    // Cuando llega a 0 vuelve la animación CSS idle
+    setTimeout(() => {
+      if (!isHovering) {
+        cancelAnimationFrame(animFrame);
+        animFrame = null;
+        wrapper.style.animation = "";
+        wrapper.style.transform = "";
+        if (light) light.style.background = "";
+      }
+    }, 800);
+  });
+
+  // Giroscopio en móvil
+  if (window.DeviceOrientationEvent) {
+    window.addEventListener("deviceorientation", (e) => {
+      if (isHovering) return;
+      const beta  = Math.min(Math.max(e.beta  || 0, -30), 30); // inclinación adelante/atrás
+      const gamma = Math.min(Math.max(e.gamma || 0, -30), 30); // inclinación lateral
+      targetRX = -(beta  / 30) * (MAX_ROT * 0.5);
+      targetRY =  (gamma / 30) * (MAX_ROT * 0.8);
+      if (!animFrame) tick();
+    }, { passive: true });
+  }
+
+  // Inicia el loop idle
+  tick();
+}
+
+// =============================================
 // TIEMPO REAL — stock/productos cambian sin recargar
 // =============================================
 function initRealtime() {
@@ -587,6 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarProductos();
   actualizarContadorPedido();
   initHamburger();
+  initSneaker3D();
   initRealtime();
   document.getElementById("cart-overlay")?.addEventListener("click", toggleCarrito);
 });
