@@ -473,7 +473,9 @@ ${DIVIDER}
 ${DIVIDER}
 *Pago por Yape*
 Enviaré S/ ${cliente.total.toFixed(2)} a *${YAPE_NUMERO}* (${YAPE_NOMBRE}).
-Adjuntaré la captura del pago en este chat indicando el código *#${codigo}*.`;
+Adjuntaré la captura del pago en este chat indicando el código *#${codigo}*.
+${DIVIDER}
+*Envío:* Coordinamos por Shalom u otra agencia a mi destino.`;
 
   const url = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
   document.getElementById("btn-whatsapp").href = url;
@@ -566,35 +568,27 @@ function initSneaker3D() {
     animFrame = requestAnimationFrame(tick);
   }
 
-  // Mouse en escritorio
-  scene.addEventListener("mousemove", (e) => {
-    isHovering = true;
+// Función común: calcula rotación + destello a partir de coords de puntero
+  function actualizarDesdePuntero(clientX, clientY) {
     const rect = scene.getBoundingClientRect();
-    const nx = (e.clientX - rect.left) / rect.width  - 0.5; // -0.5 a 0.5
-    const ny = (e.clientY - rect.top)  / rect.height - 0.5;
+    const nx = (clientX - rect.left) / rect.width  - 0.5; // -0.5 a 0.5
+    const ny = (clientY - rect.top)  / rect.height - 0.5;
 
     targetRY =  nx * MAX_ROT * 2;
     targetRX = -ny * MAX_ROT;
 
-    // Mueve el destello según el cursor
     if (light) {
       const lx = Math.round((nx + 0.5) * 100);
       const ly = Math.round((ny + 0.5) * 100);
       light.style.background =
         `radial-gradient(circle at ${lx}% ${ly}%, rgba(255,255,255,0.22) 0%, transparent 55%)`;
     }
-  });
+  }
 
-  scene.addEventListener("mouseenter", () => {
-    isHovering = true;
-    if (!animFrame) tick();
-  });
-
-  scene.addEventListener("mouseleave", () => {
+  function resetTilt() {
     isHovering = false;
     targetRX = 0;
     targetRY = 0;
-    // Cuando llega a 0 vuelve la animación CSS idle
     setTimeout(() => {
       if (!isHovering) {
         cancelAnimationFrame(animFrame);
@@ -604,19 +598,37 @@ function initSneaker3D() {
         if (light) light.style.background = "";
       }
     }, 800);
+  }
+
+  // Mouse en escritorio
+  scene.addEventListener("mousemove", (e) => {
+    isHovering = true;
+    if (!animFrame) tick();
+    actualizarDesdePuntero(e.clientX, e.clientY);
   });
 
-  // Giroscopio en móvil
-  if (window.DeviceOrientationEvent) {
-    window.addEventListener("deviceorientation", (e) => {
-      if (isHovering) return;
-      const beta  = Math.min(Math.max(e.beta  || 0, -30), 30); // inclinación adelante/atrás
-      const gamma = Math.min(Math.max(e.gamma || 0, -30), 30); // inclinación lateral
-      targetRX = -(beta  / 30) * (MAX_ROT * 0.5);
-      targetRY =  (gamma / 30) * (MAX_ROT * 0.8);
-      if (!animFrame) tick();
-    }, { passive: true });
-  }
+  scene.addEventListener("mouseenter", () => {
+    isHovering = true;
+    if (!animFrame) tick();
+  });
+
+  scene.addEventListener("mouseleave", resetTilt);
+
+  // Toque/arrastre en móvil (sin giroscopio)
+  scene.addEventListener("touchstart", (e) => {
+    isHovering = true;
+    if (!animFrame) tick();
+    const t = e.touches[0];
+    if (t) actualizarDesdePuntero(t.clientX, t.clientY);
+  }, { passive: true });
+
+  scene.addEventListener("touchmove", (e) => {
+    const t = e.touches[0];
+    if (t) actualizarDesdePuntero(t.clientX, t.clientY);
+  }, { passive: true });
+
+  scene.addEventListener("touchend", resetTilt);
+  scene.addEventListener("touchcancel", resetTilt);
 
   // Inicia el loop idle
   tick();
