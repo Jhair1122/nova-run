@@ -58,16 +58,22 @@ function renderCatalogo(lista) {
   }
 
   lista.forEach((p, index) => {
-    const tallas = (p.tallas && p.tallas.length > 0) ? p.tallas : [];
-    const sinStock = tallas.length === 0;
+    const tallasObj = (p.tallas && typeof p.tallas === "object") ? p.tallas : {};
+    const disponibles = Object.entries(tallasObj)
+      .map(([talla, stock]) => [parseInt(talla), Number(stock)])
+      .filter(([, stock]) => stock > 0)
+      .sort((a, b) => a[0] - b[0]);
+    const sinStock = disponibles.length === 0;
 
     const card = document.createElement("article");
     card.className = `product-card ${index === 0 && filtroActivo === "Todos" ? "featured" : ""}`;
+    card.dataset.productoId = p.id;
     card.innerHTML = `
       <div class="product-img-wrap">
         <img src="${p.imagen}" alt="${escHtml(p.nombre)}" loading="lazy" />
         ${p.nuevo ? '<span class="badge badge-new">NUEVO</span>' : ""}
         ${p.precio_antes ? '<span class="badge badge-sale">OFERTA</span>' : ""}
+        ${sinStock ? '<span class="badge badge-sale" style="background:var(--gray-2)">AGOTADO</span>' : ""}
       </div>
       <div class="product-info">
         <span class="product-cat">${escHtml(p.categoria)}</span>
@@ -80,22 +86,41 @@ function renderCatalogo(lista) {
         <div class="product-options">
           <select class="talla-select" ${sinStock ? "disabled" : ""}>
             ${sinStock
-              ? '<option>Sin tallas</option>'
-              : tallas.map(t => `<option value="${t}">Talla ${t}</option>`).join("")}
+              ? '<option>Sin stock</option>'
+              : disponibles.map(([t, stock]) => `<option value="${t}" data-stock="${stock}">Talla ${t}</option>`).join("")}
           </select>
           <button class="btn-add" ${sinStock ? "disabled" : ""}>
             ${sinStock ? "Agotado" : "Agregar"}
           </button>
         </div>
+        <div class="stock-info"></div>
       </div>
     `;
 
     if (!sinStock) {
       const select = card.querySelector(".talla-select");
       const btn = card.querySelector(".btn-add");
+      const stockInfo = card.querySelector(".stock-info");
+
+      const actualizarStockInfo = () => {
+        const stock = parseInt(select.selectedOptions[0]?.dataset.stock || "0");
+        stockInfo.className = "stock-info";
+        if (stock <= 2) {
+          stockInfo.textContent = `¡Solo ${stock} unidad${stock === 1 ? "" : "es"} disponible${stock === 1 ? "" : "s"}!`;
+          stockInfo.classList.add("low");
+        } else {
+          stockInfo.textContent = `${stock} unidades disponibles`;
+        }
+      };
+      actualizarStockInfo();
+      select.addEventListener("change", actualizarStockInfo);
+
       btn.addEventListener("click", () => {
         agregarAlPedido(p.id, parseInt(select.value));
       });
+    } else {
+      card.querySelector(".stock-info").textContent = "Vuelve a revisar pronto, este modelo está agotado.";
+      card.querySelector(".stock-info").classList.add("out");
     }
 
     grid.appendChild(card);
@@ -143,9 +168,9 @@ function initTilt3D() {
       const y = e.clientY - rect.top;
       const cx = rect.width / 2;
       const cy = rect.height / 2;
-      const rotateY = ((x - cx) / cx) * 5;
-      const rotateX = -((y - cy) / cy) * 5;
-      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+      const rotateY = ((x - cx) / cx) * 2;
+      const rotateX = -((y - cy) / cy) * 2;
+      card.style.transform = `perspective(1400px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
     });
 
     card.addEventListener("mouseleave", () => {
@@ -183,7 +208,21 @@ function agregarAlPedido(productoId, talla) {
   const producto = productosCache.find(p => p.id === productoId);
   if (!producto) return;
 
+  const stockDisponible = Number(producto.tallas?.[String(talla)] || 0);
+  if (stockDisponible <= 0) {
+    mostrarToast("Esa talla ya no tiene stock disponible");
+    renderCatalogo(filtroActivo === "Todos" ? productosCache : productosCache.filter(p => p.categoria === filtroActivo));
+    return;
+  }
+
   const existe = pedido.find(item => item.id === productoId && item.talla === talla);
+  const cantidadEnPedido = existe ? existe.cantidad : 0;
+
+  if (cantidadEnPedido + 1 > stockDisponible) {
+    mostrarToast(`Solo quedan ${stockDisponible} unidad(es) de esta talla`);
+    return;
+  }
+
   if (existe) {
     existe.cantidad += 1;
   } else {
@@ -295,6 +334,12 @@ function renderPedidoPanel() {
       const i = parseInt(btn.dataset.index);
       const action = btn.dataset.action;
       if (action === "inc") {
+        const producto = productosCache.find(p => p.id === pedido[i].id);
+        const stockDisponible = Number(producto?.tallas?.[String(pedido[i].talla)] || 0);
+        if (pedido[i].cantidad + 1 > stockDisponible) {
+          mostrarToast(`Solo quedan ${stockDisponible} unidad(es) de esta talla`);
+          return;
+        }
         pedido[i].cantidad += 1;
       } else {
         pedido[i].cantidad -= 1;
@@ -372,33 +417,32 @@ document.getElementById("checkout-enviar")?.addEventListener("click", async () =
   btn.disabled = true;
   btn.textContent = "Enviando...";
 
-  const { data, error } = await supabase
-    .from("pedidos")
-    .insert([{
-      cliente_nombre: nombre,
-      cliente_telefono: telefono,
-      cliente_direccion: direccion,
-      cliente_referencia: referencia,
-      items: itemsPedido,
-      total,
-      metodo_pago: "Yape",
-      estado: "pendiente",
-      creado_en: new Date().toISOString(),
-    }])
-    .select()
-    .single();
+  const { data: pedidoId, error } = await supabase.rpc("crear_pedido", {
+    p_cliente_nombre: nombre,
+    p_cliente_telefono: telefono,
+    p_cliente_direccion: direccion,
+    p_cliente_referencia: referencia,
+    p_items: itemsPedido,
+    p_total: total,
+  });
 
   btn.disabled = false;
   btn.textContent = "Continuar →";
 
-  if (error || !data) {
-    errEl.textContent = "No se pudo registrar el pedido. Intenta de nuevo.";
+  if (error || !pedidoId) {
+    if (error && error.message && error.message.includes("SIN_STOCK")) {
+      errEl.textContent = "Una de las tallas seleccionadas ya no tiene stock disponible (alguien más la reservó). Por favor revisa tu pedido y elige otra talla o cantidad.";
+    } else {
+      errEl.textContent = "No se pudo registrar el pedido. Intenta de nuevo.";
+    }
     errEl.style.display = "block";
     console.error(error);
+    // Refrescar catálogo por si el stock cambió
+    cargarProductos();
     return;
   }
 
-  const codigo = data.id.slice(0, 8).toUpperCase();
+  const codigo = pedidoId.slice(0, 8).toUpperCase();
 
   mostrarConfirmacion(codigo, {
     nombre, telefono, direccion, referencia, total, items: itemsPedido,
@@ -476,10 +520,37 @@ function escHtml(str) {
 }
 
 // =============================================
+// TIEMPO REAL — stock/productos cambian sin recargar
+// =============================================
+function initRealtime() {
+  supabase
+    .channel("productos-realtime")
+    .on("postgres_changes", { event: "*", schema: "public", table: "productos" }, (payload) => {
+      if (payload.eventType === "DELETE") {
+        productosCache = productosCache.filter(p => p.id !== payload.old.id);
+      } else {
+        const idx = productosCache.findIndex(p => p.id === payload.new.id);
+        if (idx >= 0) {
+          productosCache[idx] = payload.new;
+        } else {
+          productosCache.unshift(payload.new);
+        }
+      }
+
+      const filtrados = filtroActivo === "Todos"
+        ? productosCache
+        : productosCache.filter(p => p.categoria === filtroActivo);
+      renderCatalogo(filtrados);
+    })
+    .subscribe();
+}
+
+// =============================================
 // INIT
 // =============================================
 document.addEventListener("DOMContentLoaded", () => {
   cargarProductos();
   actualizarContadorPedido();
+  initRealtime();
   document.getElementById("cart-overlay")?.addEventListener("click", toggleCarrito);
 });
