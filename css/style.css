@@ -336,16 +336,18 @@ a {
   justify-content: center;
   perspective: 900px;
   z-index: 1;
+  padding: 2rem;
 }
 
 .sneaker-wrapper {
   position: relative;
-  width: 75%;
-  max-width: 520px;
+  width: 92%;
+  max-width: 720px;
   transform-style: preserve-3d;
   transition: transform 0.08s linear;
   will-change: transform;
   animation: sneaker-idle 5s ease-in-out infinite;
+  touch-action: none;
 }
 
 @keyframes sneaker-idle {
@@ -1697,10 +1699,13 @@ footer {
     padding-bottom: 3rem;
   }
 
-  .hero-visual { display: none; }
+  .hero-visual {
+    height: 320px;
+    order: -1;
+  }
 
   .hero-content {
-    padding: 7rem 2rem 3rem;
+    padding: 2rem 2rem 3rem;
     align-items: flex-start;
   }
 
