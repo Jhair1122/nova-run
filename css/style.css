@@ -323,7 +323,83 @@ a {
   opacity: 0.85;
   position: relative;
   z-index: 1;
-  animation: hero-float 6s ease-in-out infinite;
+}
+
+/* ============================================
+   SNEAKER 3D SCENE
+   ============================================ */
+.sneaker-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 900px;
+  z-index: 1;
+}
+
+.sneaker-wrapper {
+  position: relative;
+  width: 75%;
+  max-width: 520px;
+  transform-style: preserve-3d;
+  transition: transform 0.08s linear;
+  will-change: transform;
+  animation: sneaker-idle 5s ease-in-out infinite;
+}
+
+@keyframes sneaker-idle {
+  0%,100% { transform: translateY(0) rotateX(2deg) rotateY(-4deg); }
+  50%      { transform: translateY(-18px) rotateX(-2deg) rotateY(4deg); }
+}
+
+.sneaker-wrapper:hover {
+  animation-play-state: paused;
+}
+
+.sneaker-wrapper img {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 30px 60px rgba(255,77,0,0.35)) drop-shadow(0 8px 24px rgba(0,0,0,0.6));
+  transition: filter 0.3s ease;
+}
+
+.sneaker-wrapper:hover img {
+  filter: drop-shadow(0 40px 80px rgba(255,77,0,0.55)) drop-shadow(0 12px 32px rgba(0,0,0,0.7));
+}
+
+/* Destello de luz que se mueve con el cursor */
+.sneaker-light {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: 8px;
+  background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.18) 0%, transparent 55%);
+  transition: background 0.12s linear;
+  mix-blend-mode: screen;
+}
+
+/* Sombra en el suelo que sube/baja con el float */
+.sneaker-shadow {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55%;
+  height: 28px;
+  background: radial-gradient(ellipse, rgba(255,77,0,0.35) 0%, transparent 70%);
+  filter: blur(14px);
+  z-index: 0;
+  animation: shadow-pulse 5s ease-in-out infinite;
+}
+
+@keyframes shadow-pulse {
+  0%,100% { opacity: 0.7; transform: translateX(-50%) scaleX(1); }
+  50%      { opacity: 0.3; transform: translateX(-50%) scaleX(0.7); }
 }
 
 .hero-accent-line {
@@ -368,11 +444,6 @@ a {
 @keyframes float-blob {
   0%, 100% { transform: translate(0, 0) scale(1); }
   50% { transform: translate(40px, -50px) scale(1.12); }
-}
-
-@keyframes hero-float {
-  0%, 100% { transform: translateY(0) scale(1.05); }
-  50% { transform: translateY(-14px) scale(1.07); }
 }
 
 /* ============================================
@@ -459,20 +530,15 @@ a {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  will-change: transform;
-  transform-style: preserve-3d;
+  will-change: auto;
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.6s ease, transform 0.15s ease-out, background var(--transition), box-shadow 0.35s ease;
+  transition: opacity 0.6s ease, transform 0.6s ease, background var(--transition), box-shadow 0.35s ease;
 }
 
 .product-card.in-view {
   opacity: 1;
-}
-
-.product-card.in-view:not(:hover) {
   transform: translateY(0);
-  transition: opacity 0.6s ease, transform 0.35s ease-out, background var(--transition), box-shadow 0.35s ease;
 }
 
 .product-card:hover {
