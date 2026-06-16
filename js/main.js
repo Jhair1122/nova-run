@@ -520,6 +520,41 @@ function escHtml(str) {
 }
 
 // =============================================
+// MENÚ HAMBURGUESA (móvil)
+// =============================================
+function initHamburger() {
+  const hamburger = document.getElementById("hamburger");
+  const navMobile = document.getElementById("nav-mobile");
+  if (!hamburger || !navMobile) return;
+
+  const mq = window.matchMedia("(max-width: 768px)");
+
+  const toggleVisibility = (e) => {
+    hamburger.style.display = e.matches ? "flex" : "none";
+    if (!e.matches) {
+      hamburger.classList.remove("open");
+      navMobile.classList.remove("open");
+    }
+  };
+
+  mq.addEventListener("change", toggleVisibility);
+  toggleVisibility(mq);
+
+  hamburger.addEventListener("click", () => {
+    hamburger.classList.toggle("open");
+    navMobile.classList.toggle("open");
+  });
+
+  // Cierra el menú al hacer clic en un enlace
+  navMobile.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      hamburger.classList.remove("open");
+      navMobile.classList.remove("open");
+    });
+  });
+}
+
+// =============================================
 // TIEMPO REAL — stock/productos cambian sin recargar
 // =============================================
 function initRealtime() {
@@ -551,6 +586,7 @@ function initRealtime() {
 document.addEventListener("DOMContentLoaded", () => {
   cargarProductos();
   actualizarContadorPedido();
+  initHamburger();
   initRealtime();
   document.getElementById("cart-overlay")?.addEventListener("click", toggleCarrito);
 });
