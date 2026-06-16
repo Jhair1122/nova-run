@@ -336,13 +336,14 @@ a {
   justify-content: center;
   perspective: 900px;
   z-index: 1;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .sneaker-wrapper {
   position: relative;
-  width: 92%;
-  max-width: 720px;
+  width: 100%;
+  height: 100%;
+  max-width: none;
   transform-style: preserve-3d;
   transition: transform 0.08s linear;
   will-change: transform;
@@ -361,6 +362,8 @@ a {
 
 .sneaker-wrapper img {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
   border-radius: 8px;
   position: relative;
@@ -569,6 +572,7 @@ a {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top center;
   transition: transform 0.4s ease;
   transform: translateZ(0);
 }
@@ -817,7 +821,7 @@ a {
    ============================================ */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5px;
   background: var(--gray-2);
 }
@@ -1907,9 +1911,9 @@ footer {
     width: 100%;
   }
 
-  /* FEATURES */
+    /* FEATURES */
   .features-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 1px;
   }
 
