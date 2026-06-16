@@ -5,8 +5,8 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 // ——— CONFIGURACIÓN (mismos valores que supabase-client.js) ———
-const SUPABASE_URL = "https://tmqpawykchvrfjzxghhu.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcXBhd3lrY2h2cmZqenhnaGh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NTAwODAsImV4cCI6MjA5NjUyNjA4MH0.uCFWG1VFeZsTY2VV9DZFCavmTlB_Atr177Q5wwpacVM";
+const SUPABASE_URL = "https://TU_PROYECTO.supabase.co";
+const SUPABASE_ANON_KEY = "TU_ANON_KEY_AQUI";
 // ——————————————————————————————————————————————————————————
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -64,6 +64,7 @@ function mostrarDashboard(email) {
   cargarProductos();
   cargarPedidos();
   cargarMensajes();
+  initRealtimeAdmin();
 }
 
 // =============================================
@@ -114,7 +115,7 @@ function renderTablaProductos(lista) {
       <td>${escHtml(p.categoria)}</td>
       <td>S/ ${Number(p.precio).toFixed(2)}</td>
       <td>${p.precio_antes ? `S/ ${Number(p.precio_antes).toFixed(2)}` : "—"}</td>
-      <td style="font-size:0.75rem; color:var(--gray-1)">${(p.tallas || []).join(", ") || "—"}</td>
+      <td style="font-size:0.75rem; color:var(--gray-1)">${formatTallasStock(p.tallas)}</td>
       <td>
         ${p.nuevo      ? '<span class="tag tag-new">Nuevo</span>' : ""}
         ${p.precio_antes ? '<span class="tag tag-sale">Oferta</span>' : ""}
@@ -143,21 +144,36 @@ document.getElementById("search-productos").addEventListener("input", e => {
 // PRODUCTOS — MODAL NUEVO / EDITAR
 // =============================================
 
-// Generar chips de tallas
-function renderTallas(seleccionadas = []) {
+// Generar filas de talla + stock
+function renderTallas(tallasObj = {}) {
   const grid = document.getElementById("tallas-grid");
-  grid.innerHTML = TALLAS_DISPONIBLES.map(t => `
-    <div class="talla-chip ${seleccionadas.includes(t) ? "selected" : ""}" data-talla="${t}">${t}</div>
-  `).join("");
+  grid.innerHTML = TALLAS_DISPONIBLES.map(t => {
+    const stock = tallasObj[String(t)] ?? 0;
+    const activo = stock > 0;
+    return `
+    <div class="talla-row ${activo ? "active" : ""}" data-talla="${t}">
+      <span class="talla-row-label">${t}</span>
+      <input type="number" class="talla-stock-input" min="0" step="1" value="${stock}" placeholder="0" />
+    </div>`;
+  }).join("");
 
-  grid.querySelectorAll(".talla-chip").forEach(chip => {
-    chip.addEventListener("click", () => chip.classList.toggle("selected"));
+  grid.querySelectorAll(".talla-stock-input").forEach(input => {
+    input.addEventListener("input", () => {
+      const row = input.closest(".talla-row");
+      const val = parseInt(input.value) || 0;
+      row.classList.toggle("active", val > 0);
+    });
   });
 }
 
-function getTallasSeleccionadas() {
-  return [...document.querySelectorAll(".talla-chip.selected")]
-    .map(c => parseInt(c.dataset.talla));
+function getTallasStock() {
+  const tallas = {};
+  document.querySelectorAll("#tallas-grid .talla-row").forEach(row => {
+    const talla = row.dataset.talla;
+    const stock = parseInt(row.querySelector(".talla-stock-input").value) || 0;
+    if (stock > 0) tallas[talla] = stock;
+  });
+  return tallas;
 }
 
 // Subida de imagen a Supabase Storage
@@ -220,7 +236,7 @@ function abrirNuevo() {
   document.getElementById("f-destacado").checked = false;
   document.getElementById("img-preview-wrap").style.display = "none";
   document.getElementById("modal-error").style.display = "none";
-  renderTallas([]);
+  renderTallas({});
   document.getElementById("modal-overlay").style.display = "flex";
 }
 
@@ -251,7 +267,7 @@ window.abrirEditar = function(id) {
     wrap.style.display = "none";
   }
 
-  renderTallas(p.tallas || []);
+  renderTallas(p.tallas || {});
   document.getElementById("modal-overlay").style.display = "flex";
 };
 
@@ -276,7 +292,7 @@ document.getElementById("btn-guardar-producto").addEventListener("click", async 
   const imagen     = document.getElementById("f-imagen").value.trim();
   const nuevo      = document.getElementById("f-nuevo").checked;
   const destacado  = document.getElementById("f-destacado").checked;
-  const tallas     = getTallasSeleccionadas();
+  const tallas     = getTallasStock();
 
   if (!nombre || !categoria || isNaN(precio) || precio <= 0 || !descripcion || !imagen) {
     errEl.textContent = "Completa los campos obligatorios: nombre, categoría, precio, descripción e imagen.";
@@ -515,11 +531,21 @@ document.getElementById("btn-guardar-estado-pedido").addEventListener("click", a
   if (!pedidoAbiertoId) return;
   const nuevoEstado = document.getElementById("pedido-estado-select").value;
 
-  const { error } = await sb.from("pedidos").update({ estado: nuevoEstado }).eq("id", pedidoAbiertoId);
+  let error;
+  if (nuevoEstado === "cancelado") {
+    // Devuelve el stock reservado de forma atómica
+    ({ error } = await sb.rpc("cancelar_pedido", { p_pedido_id: pedidoAbiertoId }));
+  } else {
+    ({ error } = await sb.from("pedidos").update({ estado: nuevoEstado }).eq("id", pedidoAbiertoId));
+  }
+
   if (!error) {
     document.getElementById("modal-pedido-overlay").style.display = "none";
     pedidoAbiertoId = null;
     cargarPedidos();
+    cargarProductos();
+  } else {
+    console.error(error);
   }
 });
 
@@ -528,11 +554,16 @@ document.getElementById("btn-guardar-estado-pedido").addEventListener("click", a
 // =============================================
 window.confirmarEliminarPedido = function (id, codigo) {
   confirmCallback = async () => {
+    // Devuelve el stock reservado antes de borrar (si no estaba ya cancelado)
+    await sb.rpc("cancelar_pedido", { p_pedido_id: id });
     const { error } = await sb.from("pedidos").delete().eq("id", id);
-    if (!error) cargarPedidos();
+    if (!error) {
+      cargarPedidos();
+      cargarProductos();
+    }
   };
   document.getElementById("confirm-text").textContent =
-    `¿Eliminar el pedido #${codigo}? Esta acción no se puede deshacer.`;
+    `¿Eliminar el pedido #${codigo}? Esta acción no se puede deshacer. Si estaba pendiente o pagado, el stock reservado se devolverá al catálogo.`;
   document.getElementById("confirm-overlay").style.display = "flex";
 };
 
@@ -675,6 +706,14 @@ document.getElementById("btn-cerrar-mensaje").addEventListener("click", () => {
 // =============================================
 // UTILIDADES
 // =============================================
+function formatTallasStock(tallas) {
+  if (!tallas || Object.keys(tallas).length === 0) return "—";
+  return Object.entries(tallas)
+    .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+    .map(([talla, stock]) => `${talla}:${stock}`)
+    .join("  ");
+}
+
 function escHtml(str) {
   if (!str) return "";
   return String(str)
@@ -689,6 +728,23 @@ function formatFecha(iso, larga = false) {
   const d = new Date(iso);
   if (larga) return d.toLocaleString("es-PE", { dateStyle: "long", timeStyle: "short" });
   return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// =============================================
+// TIEMPO REAL
+// =============================================
+function initRealtimeAdmin() {
+  sb.channel("admin-pedidos")
+    .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, () => {
+      cargarPedidos();
+    })
+    .subscribe();
+
+  sb.channel("admin-productos")
+    .on("postgres_changes", { event: "*", schema: "public", table: "productos" }, () => {
+      cargarProductos();
+    })
+    .subscribe();
 }
 
 // =============================================
