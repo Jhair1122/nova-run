@@ -472,11 +472,12 @@ a {
 
 .product-card.in-view:not(:hover) {
   transform: translateY(0);
+  transition: opacity 0.6s ease, transform 0.35s ease-out, background var(--transition), box-shadow 0.35s ease;
 }
 
 .product-card:hover {
   background: var(--bg-card-hover);
-  box-shadow: 0 24px 60px -24px rgba(255, 77, 0, 0.4), 0 0 0 1px rgba(255, 77, 0, 0.18);
+  box-shadow: 0 14px 40px -20px rgba(255, 77, 0, 0.35), 0 0 0 1px rgba(255, 77, 0, 0.14);
   z-index: 3;
 }
 
@@ -505,7 +506,7 @@ a {
 }
 
 .product-card:hover .product-img-wrap img {
-  transform: scale(1.06);
+  transform: scale(1.03);
 }
 
 .badge {
@@ -621,6 +622,22 @@ a {
 
 .talla-select option {
   background: var(--bg-card);
+}
+
+.stock-info {
+  font-size: 0.68rem;
+  color: var(--gray-1);
+  margin-top: 0.35rem;
+  min-height: 1em;
+}
+
+.stock-info.low {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.stock-info.out {
+  color: var(--error);
 }
 
 .btn-add {
@@ -1501,7 +1518,7 @@ footer {
   font-size: 2rem;
   font-weight: 700;
   color: var(--accent);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.04em;
 }
 
 /* Caja Yape */
@@ -1517,7 +1534,7 @@ footer {
   font-size: 1.15rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
   margin-bottom: 0.5rem;
   color: #b794f6;
   display: flex;
@@ -1529,7 +1546,7 @@ footer {
   font-family: var(--font-display);
   font-size: 1.7rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
   color: #fff;
   margin: 0.25rem 0;
 }
