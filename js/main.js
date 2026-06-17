@@ -1,5 +1,5 @@
 // =============================================
-// NOVARUN — TIENDA PÚBLICA
+// APEXKICKS — TIENDA PÚBLICA
 // Catálogo dinámico + "Mi Pedido" + checkout vía WhatsApp/Yape
 // =============================================
 
@@ -547,92 +547,76 @@ function initSneaker3D() {
   const light   = wrapper?.querySelector(".sneaker-light");
   if (!scene || !wrapper || !img) return;
 
-  const MAX_ROT  = 14;   // grados máximos de rotación
-  const LIFT     = 12;   // px de elevación al hover
-  let animFrame  = null;
-  let targetRX   = 0, targetRY = 0;
-  let currentRX  = 0, currentRY = 0;
-  let isHovering = false;
+  const MAX_ROT = 8;
+  const MAX_Y   = 6;
+  let animFrame = null;
+  let targetRX  = 0, targetRY = 0, targetY = 0;
+  let currentRX = 0, currentRY = 0, currentY = 0;
+  let isActive  = false;
+  let idleStart = null;
 
-  // Lerp suavizado
   function lerp(a, b, t) { return a + (b - a) * t; }
 
-    function tick() {
-    currentRX = lerp(currentRX, targetRX, 0.10);
-    currentRY = lerp(currentRY, targetRY, 0.10);
+  function idleTransform(t) {
+    const s  = Math.sin(t / 5000);
+    const s2 = Math.sin(t / 7000 + 1);
+    return {
+      rx: s  * 1.5,
+      ry: s2 * 3,
+      ty: s  * 8,
+    };
+  }
 
-    img.style.animation = "none";
+  function tick(timestamp) {
+    if (!isActive) {
+      if (!idleStart) idleStart = timestamp;
+      const idle = idleTransform(timestamp - idleStart);
+      currentRX = lerp(currentRX, idle.rx, 0.04);
+      currentRY = lerp(currentRY, idle.ry, 0.04);
+      currentY  = lerp(currentY,  idle.ty, 0.04);
+    } else {
+      idleStart = null;
+      currentRX = lerp(currentRX, targetRX, 0.10);
+      currentRY = lerp(currentRY, targetRY, 0.10);
+      currentY  = lerp(currentY,  targetY,  0.10);
+    }
+
     img.style.transform =
-      `translateY(${isHovering ? -LIFT : 0}px) ` +
-      `rotateX(${currentRX}deg) rotateY(${currentRY}deg)`;
+      `perspective(1200px) rotateX(${currentRX}deg) rotateY(${currentRY}deg) translateY(${currentY}px)`;
 
     animFrame = requestAnimationFrame(tick);
   }
 
-// Función común: calcula rotación + destello a partir de coords de puntero
-  function actualizarDesdePuntero(clientX, clientY) {
+  function applyPointer(clientX, clientY) {
     const rect = scene.getBoundingClientRect();
-    const nx = (clientX - rect.left) / rect.width  - 0.5; // -0.5 a 0.5
-    const ny = (clientY - rect.top)  / rect.height - 0.5;
-
+    const nx = (clientX - rect.left)  / rect.width  - 0.5;
+    const ny = (clientY - rect.top)   / rect.height - 0.5;
     targetRY =  nx * MAX_ROT * 2;
     targetRX = -ny * MAX_ROT;
-
+    targetY  = -ny * MAX_Y;
     if (light) {
       const lx = Math.round((nx + 0.5) * 100);
       const ly = Math.round((ny + 0.5) * 100);
       light.style.background =
-        `radial-gradient(circle at ${lx}% ${ly}%, rgba(255,255,255,0.22) 0%, transparent 55%)`;
+        `radial-gradient(circle at ${lx}% ${ly}%, rgba(255,255,255,0.18) 0%, transparent 55%)`;
     }
   }
 
-  function resetTilt() {
-    isHovering = false;
-    targetRX = 0;
-    targetRY = 0;
-    setTimeout(() => {
-      if (!isHovering) {
-        cancelAnimationFrame(animFrame);
-        animFrame = null;
-        img.style.animation = "";
-        img.style.transform = "";
-        if (light) light.style.background = "";
-      }
-    }, 800);
+  function onEnter() { isActive = true; }
+  function onLeave() {
+    isActive = false;
+    targetRX = 0; targetRY = 0; targetY = 0;
+    if (light) light.style.background = "";
   }
 
-  // Mouse en escritorio
-  scene.addEventListener("mousemove", (e) => {
-    isHovering = true;
-    if (!animFrame) tick();
-    actualizarDesdePuntero(e.clientX, e.clientY);
-  });
+  scene.addEventListener("mousemove",  (e) => { onEnter(); applyPointer(e.clientX, e.clientY); });
+  scene.addEventListener("mouseenter", onEnter);
+  scene.addEventListener("mouseleave", onLeave);
+  scene.addEventListener("touchstart", (e) => { onEnter(); const t = e.touches[0]; if(t) applyPointer(t.clientX, t.clientY); }, { passive: true });
+  scene.addEventListener("touchmove",  (e) => { const t = e.touches[0]; if(t) applyPointer(t.clientX, t.clientY); }, { passive: true });
+  scene.addEventListener("touchend",   onLeave);
 
-  scene.addEventListener("mouseenter", () => {
-    isHovering = true;
-    if (!animFrame) tick();
-  });
-
-  scene.addEventListener("mouseleave", resetTilt);
-
-  // Toque/arrastre en móvil (sin giroscopio)
-  scene.addEventListener("touchstart", (e) => {
-    isHovering = true;
-    if (!animFrame) tick();
-    const t = e.touches[0];
-    if (t) actualizarDesdePuntero(t.clientX, t.clientY);
-  }, { passive: true });
-
-  scene.addEventListener("touchmove", (e) => {
-    const t = e.touches[0];
-    if (t) actualizarDesdePuntero(t.clientX, t.clientY);
-  }, { passive: true });
-
-  scene.addEventListener("touchend", resetTilt);
-  scene.addEventListener("touchcancel", resetTilt);
-
-  // Inicia el loop idle
-  tick();
+  animFrame = requestAnimationFrame(tick);
 }
 
 // =============================================
