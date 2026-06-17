@@ -1,5 +1,5 @@
 // =============================================
-// APEXKICKS — ADMIN PANEL
+// NOVARUN — ADMIN PANEL
 // =============================================
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -512,6 +512,16 @@ window.abrirPedido = function (id) {
         antes de marcarlo como "Pagado". No confirmes con base solo en una captura.
       </span>
     </div>
+
+    <div class="fraud-warning" style="margin-top:0.75rem; background:rgba(99,102,241,0.08); border-color:rgba(99,102,241,0.25); color:#a5b4fc;">
+      <span>ℹ️</span>
+      <span>
+        El stock de este pedido ya está reservado/descontado del catálogo desde que se creó.
+        Pasar entre <b>Pendiente</b> → <b>Pagado</b> → <b>Enviado</b> no afecta el stock.
+        Solo <b>Cancelado</b> devuelve el stock al catálogo, y volver a sacarlo de Cancelado
+        a cualquier otro estado lo vuelve a descontar (si todavía hay disponible).
+      </span>
+    </div>
   `;
 
   document.getElementById("pedido-estado-select").value = p.estado || "pendiente";
@@ -530,12 +540,23 @@ document.getElementById("btn-cerrar-pedido").addEventListener("click", () => {
 document.getElementById("btn-guardar-estado-pedido").addEventListener("click", async () => {
   if (!pedidoAbiertoId) return;
   const nuevoEstado = document.getElementById("pedido-estado-select").value;
+  const pedidoActual = pedidosCache.find(p => p.id === pedidoAbiertoId);
+  const errEl = document.getElementById("modal-pedido-error");
+
+  if (errEl) errEl.style.display = "none";
 
   let error;
   if (nuevoEstado === "cancelado") {
-    // Devuelve el stock reservado de forma atómica
+    // Devuelve el stock reservado de forma atómica (solo si no estaba ya cancelado)
     ({ error } = await sb.rpc("cancelar_pedido", { p_pedido_id: pedidoAbiertoId }));
+  } else if (pedidoActual && pedidoActual.estado === "cancelado") {
+    // Pasa de cancelado a otro estado: hay que volver a descontar stock
+    ({ error } = await sb.rpc("reactivar_pedido", {
+      p_pedido_id: pedidoAbiertoId,
+      p_nuevo_estado: nuevoEstado,
+    }));
   } else {
+    // Cambio normal entre estados no-cancelado: no se toca el stock
     ({ error } = await sb.from("pedidos").update({ estado: nuevoEstado }).eq("id", pedidoAbiertoId));
   }
 
@@ -546,6 +567,14 @@ document.getElementById("btn-guardar-estado-pedido").addEventListener("click", a
     cargarProductos();
   } else {
     console.error(error);
+    if (error.message && error.message.includes("SIN_STOCK")) {
+      if (errEl) {
+        errEl.textContent = "No se puede reactivar: ya no hay stock suficiente de alguna talla de este pedido.";
+        errEl.style.display = "block";
+      } else {
+        alert("No se puede reactivar: ya no hay stock suficiente de alguna talla de este pedido.");
+      }
+    }
   }
 });
 
