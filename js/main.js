@@ -1,5 +1,5 @@
 // =============================================
-// APEXKICKS — TIENDA PÚBLICA
+// NOVARUN — TIENDA PÚBLICA
 // Catálogo dinámico + "Mi Pedido" + checkout vía WhatsApp/Yape
 // =============================================
 
@@ -543,8 +543,9 @@ function initHamburger() {
 function initSneaker3D() {
   const scene   = document.getElementById("sneaker-scene");
   const wrapper = document.getElementById("sneaker-wrapper");
+  const img     = document.getElementById("sneaker-img");
   const light   = wrapper?.querySelector(".sneaker-light");
-  if (!scene || !wrapper) return;
+  if (!scene || !wrapper || !img) return;
 
   const MAX_ROT  = 14;   // grados máximos de rotación
   const LIFT     = 12;   // px de elevación al hover
@@ -556,12 +557,12 @@ function initSneaker3D() {
   // Lerp suavizado
   function lerp(a, b, t) { return a + (b - a) * t; }
 
-  function tick() {
+    function tick() {
     currentRX = lerp(currentRX, targetRX, 0.10);
     currentRY = lerp(currentRY, targetRY, 0.10);
 
-    wrapper.style.animation = "none";
-    wrapper.style.transform =
+    img.style.animation = "none";
+    img.style.transform =
       `translateY(${isHovering ? -LIFT : 0}px) ` +
       `rotateX(${currentRX}deg) rotateY(${currentRY}deg)`;
 
@@ -593,8 +594,8 @@ function initSneaker3D() {
       if (!isHovering) {
         cancelAnimationFrame(animFrame);
         animFrame = null;
-        wrapper.style.animation = "";
-        wrapper.style.transform = "";
+        img.style.animation = "";
+        img.style.transform = "";
         if (light) light.style.background = "";
       }
     }, 800);
