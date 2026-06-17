@@ -337,6 +337,7 @@ a {
   perspective: 900px;
   z-index: 1;
   padding: 1rem;
+  touch-action: none;
 }
 
 .sneaker-wrapper {
@@ -1704,7 +1705,8 @@ footer {
   }
 
   .hero-visual {
-    height: 320px;
+    height: auto;
+    aspect-ratio: 16 / 10;
     order: -1;
   }
 
@@ -1750,6 +1752,16 @@ footer {
 
 /* ---- MÓVIL GRANDE ≤768px ---- */
 @media (max-width: 768px) {
+  /* La zapatilla mantiene su propia animación de levitar y tilt táctil,
+     independiente del resto del contenido del hero */
+  .hero-visual {
+    aspect-ratio: 4 / 3;
+  }
+
+  .sneaker-wrapper {
+    animation-duration: 4.5s;
+  }
+
   /* NAV: oculta links de escritorio, muestra hamburguesa */
   .nav {
     padding: 0 1.25rem;
