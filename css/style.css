@@ -336,19 +336,15 @@ a {
   justify-content: center;
   perspective: 900px;
   z-index: 1;
-  padding: 1rem;
+  padding: 3.5rem;
   touch-action: none;
 }
 
 .sneaker-wrapper {
   position: relative;
-  width: 100%;
-  height: 100%;
-  max-width: none;
+  width: 60%;
+  max-width: 380px;
   transform-style: preserve-3d;
-  transition: transform 0.08s linear;
-  will-change: transform;
-  animation: sneaker-idle 5s ease-in-out infinite;
   touch-action: none;
 }
 
@@ -363,14 +359,15 @@ a {
 
 .sneaker-wrapper img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
   display: block;
   border-radius: 8px;
   position: relative;
   z-index: 2;
   filter: drop-shadow(0 30px 60px rgba(255,77,0,0.35)) drop-shadow(0 8px 24px rgba(0,0,0,0.6));
-  transition: filter 0.3s ease;
+  transition: transform 0.08s linear, filter 0.3s ease;
+  will-change: transform;
+  animation: sneaker-idle 5s ease-in-out infinite;
+  transform-style: preserve-3d;
 }
 
 .sneaker-wrapper:hover img {
@@ -392,11 +389,11 @@ a {
 /* Sombra en el suelo que sube/baja con el float */
 .sneaker-shadow {
   position: absolute;
-  bottom: 8%;
+  bottom: 18%;
   left: 50%;
   transform: translateX(-50%);
-  width: 55%;
-  height: 28px;
+  width: 38%;
+  height: 22px;
   background: radial-gradient(ellipse, rgba(255,77,0,0.35) 0%, transparent 70%);
   filter: blur(14px);
   z-index: 0;
