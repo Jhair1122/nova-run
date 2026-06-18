@@ -326,21 +326,19 @@ a {
 }
 
 /* ============================================
-   SNEAKER 3D SCENE
+   SNEAKER 3D SCENE — paralaje + luz
    ============================================ */
 .sneaker-scene {
   position: absolute;
   inset: 0;
-  perspective: 1200px;
   z-index: 1;
+  overflow: hidden;
   touch-action: none;
 }
 
 .sneaker-wrapper {
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
-  touch-action: none;
 }
 
 .hero-img {
@@ -349,28 +347,21 @@ a {
   object-fit: cover;
   opacity: 0.88;
   display: block;
-  transform-origin: center center;
   will-change: transform;
-  transition: filter 0.3s ease;
-  filter: drop-shadow(0 20px 40px rgba(255,77,0,0.2));
+  transform-origin: center center;
 }
 
-.sneaker-wrapper:hover .hero-img {
-  filter: drop-shadow(0 30px 60px rgba(255,77,0,0.4)) brightness(1.05);
-}
-
-/* Destello de luz que sigue el cursor */
+/* Destello de luz que sigue al cursor */
 .sneaker-light {
   position: absolute;
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.12) 0%, transparent 55%);
-  transition: background 0.12s linear;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06) 0%, transparent 55%);
   mix-blend-mode: screen;
 }
 
-/* Sombra naranja al fondo */
+/* Sombra naranja en la base */
 .sneaker-shadow {
   position: absolute;
   bottom: 0;
@@ -387,11 +378,6 @@ a {
 @keyframes shadow-pulse {
   0%,100% { opacity: 0.6; transform: translateX(-50%) scaleX(1); }
   50%      { opacity: 0.25; transform: translateX(-50%) scaleX(0.75); }
-}
-
-@keyframes sneaker-idle {
-  0%,100% { transform: rotateX(1deg) rotateY(-3deg) translateY(0px); }
-  50%      { transform: rotateX(-1deg) rotateY(3deg) translateY(-10px); }
 }
 
 .hero-accent-line {
@@ -559,7 +545,6 @@ a {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top center;
   transition: transform 0.4s ease;
   transform: translateZ(0);
 }
@@ -808,7 +793,7 @@ a {
    ============================================ */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5px;
   background: var(--gray-2);
 }
@@ -1690,9 +1675,7 @@ footer {
     padding-bottom: 3rem;
   }
 
-  .hero-visual {
-    display: none;
-  }
+  .hero-visual { display: none; }
 
   .hero-content {
     padding: 7rem 2rem 3rem;
@@ -1736,16 +1719,6 @@ footer {
 
 /* ---- MÓVIL GRANDE ≤768px ---- */
 @media (max-width: 768px) {
-  /* La zapatilla mantiene su propia animación de levitar y tilt táctil,
-     independiente del resto del contenido del hero */
-  .hero-visual {
-    aspect-ratio: 4 / 3;
-  }
-
-  .sneaker-wrapper {
-    animation-duration: 4.5s;
-  }
-
   /* NAV: oculta links de escritorio, muestra hamburguesa */
   .nav {
     padding: 0 1.25rem;
@@ -1907,9 +1880,9 @@ footer {
     width: 100%;
   }
 
-    /* FEATURES */
+  /* FEATURES */
   .features-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 1px;
   }
 
@@ -2108,3 +2081,4 @@ footer {
     padding: 0.875rem 1rem;
   }
 }
+
