@@ -1,5 +1,5 @@
 // =============================================
-// APEXKICKS — TIENDA PÚBLICA
+// NOVARUN — TIENDA PÚBLICA
 // Catálogo dinámico + "Mi Pedido" + checkout vía WhatsApp/Yape
 // =============================================
 
@@ -154,11 +154,6 @@ function initFiltros() {
     });
   });
 }
-
-// =============================================
-// EFECTO 3D TILT EN TARJETAS
-// =============================================
-// Tilt 3D eliminado — solo hover de sombra/color via CSS
 
 // =============================================
 // REVEAL AL HACER SCROLL
@@ -418,7 +413,6 @@ document.getElementById("checkout-enviar")?.addEventListener("click", async () =
     }
     errEl.style.display = "block";
     console.error(error);
-    // Refrescar catálogo por si el stock cambió
     cargarProductos();
     return;
   }
@@ -429,7 +423,6 @@ document.getElementById("checkout-enviar")?.addEventListener("click", async () =
     nombre, telefono, direccion, referencia, total, items: itemsPedido,
   });
 
-  // Limpiar pedido y cerrar checkout
   pedido = [];
   guardarPedido();
   actualizarContadorPedido();
@@ -449,7 +442,7 @@ function mostrarConfirmacion(codigo, cliente) {
   document.getElementById("yape-numero").textContent = YAPE_NUMERO;
   document.getElementById("yape-nombre").textContent = `A nombre de: ${YAPE_NOMBRE}`;
 
-  const DIVIDER = "\u2500".repeat(24); // línea divisoria ─────────────────────
+  const DIVIDER = "\u2500".repeat(24);
 
   const itemsTexto = cliente.items
     .map((item, i) =>
@@ -481,8 +474,6 @@ ${DIVIDER}
   document.getElementById("btn-whatsapp").href = url;
 
   confirmOverlay.classList.add("open");
-
-  // Intentar abrir WhatsApp automáticamente (puede ser bloqueado por el navegador)
   window.open(url, "_blank");
 }
 
@@ -528,7 +519,6 @@ function initHamburger() {
     navMobile.classList.toggle("open");
   });
 
-  // Cierra el menú al hacer clic en un enlace
   navMobile.querySelectorAll("a").forEach(link => {
     link.addEventListener("click", () => {
       hamburger.classList.remove("open");
@@ -538,85 +528,77 @@ function initHamburger() {
 }
 
 // =============================================
-// ZAPATILLA HERO — INTERACCIÓN 3D
+// ZAPATILLA HERO — EFECTO PARALAJE + LUZ 3D
+// La imagen cubre todo el panel sin rotar el marco.
+// El contenido se desplaza suavemente con el cursor.
 // =============================================
 function initSneaker3D() {
-  const scene   = document.getElementById("sneaker-scene");
-  const wrapper = document.getElementById("sneaker-wrapper");
-  const img     = document.getElementById("sneaker-img");
-  const light   = wrapper?.querySelector(".sneaker-light");
-  if (!scene || !wrapper || !img) return;
+  const scene  = document.getElementById("sneaker-scene");
+  const img    = document.getElementById("sneaker-img");
+  const light  = document.querySelector(".sneaker-light");
+  if (!scene || !img) return;
 
-  const MAX_ROT = 8;
-  const MAX_Y   = 6;
-  let animFrame = null;
-  let targetRX  = 0, targetRY = 0, targetY = 0;
-  let currentRX = 0, currentRY = 0, currentY = 0;
+  let idlePhase = 0;
+  let targetX   = 0, targetY = 0, targetS = 1;
+  let currentX  = 0, currentY = 0, currentS = 1;
   let isActive  = false;
-  let idleStart = null;
+  let frame     = null;
 
   function lerp(a, b, t) { return a + (b - a) * t; }
 
-  function idleTransform(t) {
-    const s  = Math.sin(t / 5000);
-    const s2 = Math.sin(t / 7000 + 1);
-    return {
-      rx: s  * 1.5,
-      ry: s2 * 3,
-      ty: s  * 8,
-    };
-  }
-
-  function tick(timestamp) {
+  function tick() {
     if (!isActive) {
-      if (!idleStart) idleStart = timestamp;
-      const idle = idleTransform(timestamp - idleStart);
-      currentRX = lerp(currentRX, idle.rx, 0.04);
-      currentRY = lerp(currentRY, idle.ry, 0.04);
-      currentY  = lerp(currentY,  idle.ty, 0.04);
+      idlePhase += 0.012;
+      const floatY = Math.sin(idlePhase) * 8;
+      const floatX = Math.sin(idlePhase * 0.7) * 3;
+      currentX = lerp(currentX, floatX, 0.05);
+      currentY = lerp(currentY, floatY, 0.05);
+      currentS = lerp(currentS, 1.02,   0.03);
     } else {
-      idleStart = null;
-      currentRX = lerp(currentRX, targetRX, 0.10);
-      currentRY = lerp(currentRY, targetRY, 0.10);
-      currentY  = lerp(currentY,  targetY,  0.10);
+      currentX = lerp(currentX, targetX, 0.08);
+      currentY = lerp(currentY, targetY, 0.08);
+      currentS = lerp(currentS, targetS, 0.08);
     }
 
-    img.style.transform =
-      `perspective(1200px) rotateX(${currentRX}deg) rotateY(${currentRY}deg) translateY(${currentY}px)`;
-
-    animFrame = requestAnimationFrame(tick);
+    img.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentS})`;
+    frame = requestAnimationFrame(tick);
   }
 
   function applyPointer(clientX, clientY) {
     const rect = scene.getBoundingClientRect();
     const nx = (clientX - rect.left)  / rect.width  - 0.5;
     const ny = (clientY - rect.top)   / rect.height - 0.5;
-    targetRY =  nx * MAX_ROT * 2;
-    targetRX = -ny * MAX_ROT;
-    targetY  = -ny * MAX_Y;
+
+    targetX = nx * 18;
+    targetY = ny * 12;
+    targetS = 1.045;
+
     if (light) {
       const lx = Math.round((nx + 0.5) * 100);
       const ly = Math.round((ny + 0.5) * 100);
       light.style.background =
-        `radial-gradient(circle at ${lx}% ${ly}%, rgba(255,255,255,0.18) 0%, transparent 55%)`;
+        `radial-gradient(circle at ${lx}% ${ly}%, rgba(255,255,255,0.16) 0%, transparent 50%)`;
     }
   }
 
   function onEnter() { isActive = true; }
+
   function onLeave() {
     isActive = false;
-    targetRX = 0; targetRY = 0; targetY = 0;
-    if (light) light.style.background = "";
+    targetX = 0; targetY = 0; targetS = 1;
+    if (light) light.style.background =
+      "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06) 0%, transparent 55%)";
   }
 
-  scene.addEventListener("mousemove",  (e) => { onEnter(); applyPointer(e.clientX, e.clientY); });
-  scene.addEventListener("mouseenter", onEnter);
-  scene.addEventListener("mouseleave", onLeave);
-  scene.addEventListener("touchstart", (e) => { onEnter(); const t = e.touches[0]; if(t) applyPointer(t.clientX, t.clientY); }, { passive: true });
-  scene.addEventListener("touchmove",  (e) => { const t = e.touches[0]; if(t) applyPointer(t.clientX, t.clientY); }, { passive: true });
-  scene.addEventListener("touchend",   onLeave);
+  scene.addEventListener("mousemove",   (e) => { onEnter(); applyPointer(e.clientX, e.clientY); });
+  scene.addEventListener("mouseenter",  onEnter);
+  scene.addEventListener("mouseleave",  onLeave);
+  scene.addEventListener("touchstart",  (e) => { onEnter(); const t = e.touches[0]; if (t) applyPointer(t.clientX, t.clientY); }, { passive: true });
+  scene.addEventListener("touchmove",   (e) => { const t = e.touches[0]; if (t) applyPointer(t.clientX, t.clientY); }, { passive: true });
+  scene.addEventListener("touchend",    onLeave);
+  scene.addEventListener("touchcancel", onLeave);
 
-  animFrame = requestAnimationFrame(tick);
+  frame = requestAnimationFrame(tick);
 }
 
 // =============================================
