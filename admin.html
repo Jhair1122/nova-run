@@ -308,7 +308,15 @@
       _mq.addEventListener("change", _applyMobile);
       _applyMobile(_mq);
 
-      document.getElementById("logout-btn-mobile")?.addEventListener("click", () => location.reload());
+      document.getElementById("logout-btn-mobile")?.addEventListener("click", async () => {
+        const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+        const _sb = createClient(
+          "https://tmqpawykchvrfjzxghhu.supabase.co",
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcXBhd3lrY2h2cmZqenhnaGh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NTAwODAsImV4cCI6MjA5NjUyNjA4MH0.uCFWG1VFeZsTY2VV9DZFCavmTlB_Atr177Q5wwpacVM"
+        );
+        await _sb.auth.signOut();
+        location.reload();
+      });
 
       document.getElementById("admin-tab-bar")?.querySelectorAll(".nav-item").forEach(btn => {
         btn.addEventListener("click", () => {
