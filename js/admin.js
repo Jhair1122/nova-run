@@ -7,19 +7,15 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ——— CONFIGURACIÓN (mismos valores que supabase-client.js) ———
 const SUPABASE_URL = "https://tmqpawykchvrfjzxghhu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcXBhd3lrY2h2cmZqenhnaGh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NTAwODAsImV4cCI6MjA5NjUyNjA4MH0.uCFWG1VFeZsTY2VV9DZFCavmTlB_Atr177Q5wwpacVM";
-// ——————————————————————————————————————————————————————————
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const TALLAS_DISPONIBLES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46];
 
-// =============================================
-// ESTADO
-// =============================================
 let productosCache = [];
 let mensajesCache = [];
 let pedidosCache = [];
-let editandoId = null;       // null = nuevo, uuid = editar
+let editandoId = null;
 let filtroMensajes = "todos";
 let filtroPedidos = "todos";
 let pedidoAbiertoId = null;
@@ -47,7 +43,6 @@ document.getElementById("login-btn").addEventListener("click", async () => {
   mostrarDashboard(data.user.email);
 });
 
-// Enter en login
 document.getElementById("login-password").addEventListener("keydown", e => {
   if (e.key === "Enter") document.getElementById("login-btn").click();
 });
@@ -85,7 +80,6 @@ document.querySelectorAll(".nav-item").forEach(btn => {
 async function cargarProductos() {
   const { data, error } = await sb.from("productos").select("*").order("creado_en", { ascending: false });
   if (error) { console.error(error); return; }
-
   productosCache = data || [];
   renderTablaProductos(productosCache);
   actualizarStats();
@@ -103,7 +97,6 @@ function renderTablaProductos(lista) {
     tbody.innerHTML = `<tr><td colspan="8" class="table-empty">No hay productos. Crea el primero.</td></tr>`;
     return;
   }
-
   tbody.innerHTML = lista.map(p => `
     <tr>
       <td>
@@ -131,7 +124,6 @@ function renderTablaProductos(lista) {
   `).join("");
 }
 
-// Búsqueda en tiempo real
 document.getElementById("search-productos").addEventListener("input", e => {
   const q = e.target.value.toLowerCase();
   const filtrados = productosCache.filter(p =>
@@ -144,7 +136,6 @@ document.getElementById("search-productos").addEventListener("input", e => {
 // PRODUCTOS — MODAL NUEVO / EDITAR
 // =============================================
 
-// Generar filas de talla + stock
 function renderTallas(tallasObj = {}) {
   const grid = document.getElementById("tallas-grid");
   grid.innerHTML = TALLAS_DISPONIBLES.map(t => {
@@ -176,8 +167,18 @@ function getTallasStock() {
   return tallas;
 }
 
-// Subida de imagen a Supabase Storage
-const BUCKET_NAME = "productos"; // nombre del bucket en Supabase Storage
+// =============================================
+// IMAGEN — SUBIDA Y QUITAR
+// =============================================
+const BUCKET_NAME = "productos";
+
+function limpiarImagen() {
+  document.getElementById("f-imagen").value = "";
+  document.getElementById("f-imagen-file").value = "";
+  document.getElementById("img-preview-wrap").style.display = "none";
+  document.getElementById("upload-status").textContent = "";
+  document.getElementById("upload-status").className = "upload-status";
+}
 
 document.getElementById("f-imagen-file").addEventListener("change", async (e) => {
   const file = e.target.files[0];
@@ -219,6 +220,10 @@ document.getElementById("f-imagen-file").addEventListener("change", async (e) =>
   status.className = "upload-status success";
 });
 
+document.getElementById("btn-quitar-imagen").addEventListener("click", () => {
+  limpiarImagen();
+});
+
 function abrirNuevo() {
   editandoId = null;
   document.getElementById("modal-title").textContent = "Nuevo producto";
@@ -228,14 +233,10 @@ function abrirNuevo() {
   document.getElementById("f-precio").value = "";
   document.getElementById("f-precio-antes").value = "";
   document.getElementById("f-descripcion").value = "";
-  document.getElementById("f-imagen").value = "";
-  document.getElementById("f-imagen-file").value = "";
-  document.getElementById("upload-status").textContent = "";
-  document.getElementById("upload-status").className = "upload-status";
   document.getElementById("f-nuevo").checked = false;
   document.getElementById("f-destacado").checked = false;
-  document.getElementById("img-preview-wrap").style.display = "none";
   document.getElementById("modal-error").style.display = "none";
+  limpiarImagen();
   renderTallas({});
   document.getElementById("modal-overlay").style.display = "flex";
 }
@@ -251,20 +252,17 @@ window.abrirEditar = function(id) {
   document.getElementById("f-precio").value = p.precio || "";
   document.getElementById("f-precio-antes").value = p.precio_antes || "";
   document.getElementById("f-descripcion").value = p.descripcion || "";
-  document.getElementById("f-imagen").value = p.imagen || "";
-  document.getElementById("f-imagen-file").value = "";
-  document.getElementById("upload-status").textContent = p.imagen ? "Imagen actual cargada" : "";
-  document.getElementById("upload-status").className = "upload-status";
   document.getElementById("f-nuevo").checked = !!p.nuevo;
   document.getElementById("f-destacado").checked = !!p.destacado;
   document.getElementById("modal-error").style.display = "none";
 
-  const wrap = document.getElementById("img-preview-wrap");
+  // Imagen
+  limpiarImagen();
   if (p.imagen) {
+    document.getElementById("f-imagen").value = p.imagen;
     document.getElementById("img-preview").src = p.imagen;
-    wrap.style.display = "block";
-  } else {
-    wrap.style.display = "none";
+    document.getElementById("img-preview-wrap").style.display = "block";
+    document.getElementById("upload-status").textContent = "Imagen actual cargada";
   }
 
   renderTallas(p.tallas || {});
@@ -300,18 +298,9 @@ document.getElementById("btn-guardar-producto").addEventListener("click", async 
     return;
   }
 
-  const payload = {
-    nombre,
-    categoria,
-    color,
-    precio,
+  const payload = { nombre, categoria, color, precio,
     precio_antes: precioAnt ? parseFloat(precioAnt) : null,
-    descripcion,
-    imagen,
-    tallas,
-    nuevo,
-    destacado,
-  };
+    descripcion, imagen, tallas, nuevo, destacado };
 
   let error;
   if (editandoId) {
@@ -340,10 +329,7 @@ window.confirmarEliminar = function(id, nombre) {
   pendingDeleteId = id;
   confirmCallback = async () => {
     const { error } = await sb.from("productos").delete().eq("id", pendingDeleteId);
-    if (!error) {
-      pendingDeleteId = null;
-      cargarProductos();
-    }
+    if (!error) { pendingDeleteId = null; cargarProductos(); }
   };
   document.getElementById("confirm-text").textContent =
     `¿Eliminar el producto "${nombre}"? Esta acción no se puede deshacer.`;
@@ -369,7 +355,6 @@ document.getElementById("confirm-yes").addEventListener("click", async () => {
 async function cargarPedidos() {
   const { data, error } = await sb.from("pedidos").select("*").order("creado_en", { ascending: false });
   if (error) { console.error(error); return; }
-
   pedidosCache = data || [];
   actualizarStatsPedidos();
   actualizarBadgePedidos();
@@ -391,12 +376,7 @@ function actualizarBadgePedidos() {
   badge.style.display = pendientes > 0 ? "inline-block" : "none";
 }
 
-const ESTADO_LABELS = {
-  pendiente: "Pendiente",
-  pagado: "Pagado",
-  enviado: "Enviado",
-  cancelado: "Cancelado",
-};
+const ESTADO_LABELS = { pendiente: "Pendiente", pagado: "Pagado", enviado: "Enviado", cancelado: "Cancelado" };
 
 function renderTablaPedidos() {
   let lista = pedidosCache;
@@ -432,8 +412,7 @@ function renderTablaPedidos() {
           <button class="btn btn-icon danger" onclick="confirmarEliminarPedido('${p.id}', '${codigo}')">🗑️</button>
         </div>
       </td>
-    </tr>
-  `;
+    </tr>`;
   }).join("");
 }
 
@@ -463,7 +442,6 @@ window.abrirPedido = function (id) {
       <div class="confirm-code-label">Código de pedido</div>
       <div class="confirm-code-value">#${codigo}</div>
     </div>
-
     <div class="pedido-meta">
       <div class="msg-field">
         <span class="msg-field-label">Cliente</span>
@@ -491,7 +469,6 @@ window.abrirPedido = function (id) {
         <span class="msg-field-val">${escHtml(p.metodo_pago || "Yape")}</span>
       </div>
     </div>
-
     <div class="pedido-items">
       ${items.map(it => `
         <div class="pedido-item-row">
@@ -504,23 +481,13 @@ window.abrirPedido = function (id) {
         <span>S/ ${Number(p.total).toFixed(2)}</span>
       </div>
     </div>
-
     <div class="fraud-warning">
       <span>💜</span>
-      <span>
-        Verifica este pago directamente en tu app Yape (monto, hora y código de operación)
-        antes de marcarlo como "Pagado". No confirmes con base solo en una captura.
-      </span>
+      <span>Verifica este pago directamente en tu app Yape (monto, hora y código de operación) antes de marcarlo como "Pagado". No confirmes con base solo en una captura.</span>
     </div>
-
     <div class="fraud-warning" style="margin-top:0.75rem; background:rgba(99,102,241,0.08); border-color:rgba(99,102,241,0.25); color:#a5b4fc;">
       <span>ℹ️</span>
-      <span>
-        El stock de este pedido ya está reservado/descontado del catálogo desde que se creó.
-        Pasar entre <b>Pendiente</b> → <b>Pagado</b> → <b>Enviado</b> no afecta el stock.
-        Solo <b>Cancelado</b> devuelve el stock al catálogo, y volver a sacarlo de Cancelado
-        a cualquier otro estado lo vuelve a descontar (si todavía hay disponible).
-      </span>
+      <span>El stock ya está descontado desde que se creó el pedido. Solo <b>Cancelado</b> devuelve el stock al catálogo.</span>
     </div>
   `;
 
@@ -542,21 +509,14 @@ document.getElementById("btn-guardar-estado-pedido").addEventListener("click", a
   const nuevoEstado = document.getElementById("pedido-estado-select").value;
   const pedidoActual = pedidosCache.find(p => p.id === pedidoAbiertoId);
   const errEl = document.getElementById("modal-pedido-error");
-
   if (errEl) errEl.style.display = "none";
 
   let error;
   if (nuevoEstado === "cancelado") {
-    // Devuelve el stock reservado de forma atómica (solo si no estaba ya cancelado)
     ({ error } = await sb.rpc("cancelar_pedido", { p_pedido_id: pedidoAbiertoId }));
   } else if (pedidoActual && pedidoActual.estado === "cancelado") {
-    // Pasa de cancelado a otro estado: hay que volver a descontar stock
-    ({ error } = await sb.rpc("reactivar_pedido", {
-      p_pedido_id: pedidoAbiertoId,
-      p_nuevo_estado: nuevoEstado,
-    }));
+    ({ error } = await sb.rpc("reactivar_pedido", { p_pedido_id: pedidoAbiertoId, p_nuevo_estado: nuevoEstado }));
   } else {
-    // Cambio normal entre estados no-cancelado: no se toca el stock
     ({ error } = await sb.from("pedidos").update({ estado: nuevoEstado }).eq("id", pedidoAbiertoId));
   }
 
@@ -568,12 +528,8 @@ document.getElementById("btn-guardar-estado-pedido").addEventListener("click", a
   } else {
     console.error(error);
     if (error.message && error.message.includes("SIN_STOCK")) {
-      if (errEl) {
-        errEl.textContent = "No se puede reactivar: ya no hay stock suficiente de alguna talla de este pedido.";
-        errEl.style.display = "block";
-      } else {
-        alert("No se puede reactivar: ya no hay stock suficiente de alguna talla de este pedido.");
-      }
+      if (errEl) { errEl.textContent = "No se puede reactivar: ya no hay stock suficiente de alguna talla."; errEl.style.display = "block"; }
+      else alert("No se puede reactivar: ya no hay stock suficiente.");
     }
   }
 });
@@ -583,16 +539,12 @@ document.getElementById("btn-guardar-estado-pedido").addEventListener("click", a
 // =============================================
 window.confirmarEliminarPedido = function (id, codigo) {
   confirmCallback = async () => {
-    // Devuelve el stock reservado antes de borrar (si no estaba ya cancelado)
     await sb.rpc("cancelar_pedido", { p_pedido_id: id });
     const { error } = await sb.from("pedidos").delete().eq("id", id);
-    if (!error) {
-      cargarPedidos();
-      cargarProductos();
-    }
+    if (!error) { cargarPedidos(); cargarProductos(); }
   };
   document.getElementById("confirm-text").textContent =
-    `¿Eliminar el pedido #${codigo}? Esta acción no se puede deshacer. Si estaba pendiente o pagado, el stock reservado se devolverá al catálogo.`;
+    `¿Eliminar el pedido #${codigo}? Esta acción no se puede deshacer. El stock reservado se devolverá al catálogo.`;
   document.getElementById("confirm-overlay").style.display = "flex";
 };
 
@@ -602,7 +554,6 @@ window.confirmarEliminarPedido = function (id, codigo) {
 async function cargarMensajes() {
   const { data, error } = await sb.from("mensajes").select("*").order("creado_en", { ascending: false });
   if (error) { console.error(error); return; }
-
   mensajesCache = data || [];
   actualizarBadgeMensajes();
   renderTablaMensajes();
@@ -633,9 +584,7 @@ function renderTablaMensajes() {
 
   tbody.innerHTML = lista.map(m => `
     <tr class="${m.leido ? "" : "tr-no-leido"}">
-      <td>
-        <span class="${m.leido ? "badge-leido" : "badge-no-leido"}" title="${m.leido ? "Leído" : "No leído"}"></span>
-      </td>
+      <td><span class="${m.leido ? "badge-leido" : "badge-no-leido"}" title="${m.leido ? "Leído" : "No leído"}"></span></td>
       <td>${escHtml(m.nombre)}</td>
       <td style="color:var(--gray-1)">${escHtml(m.email)}</td>
       <td>${escHtml(m.asunto)}</td>
@@ -651,7 +600,6 @@ function renderTablaMensajes() {
   `).join("");
 }
 
-// Filtros de mensajes
 document.querySelectorAll(".filter-tab").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".filter-tab").forEach(b => b.classList.remove("active"));
@@ -663,7 +611,6 @@ document.querySelectorAll(".filter-tab").forEach(btn => {
 
 document.getElementById("search-mensajes").addEventListener("input", renderTablaMensajes);
 
-// Marcar todos como leídos
 document.getElementById("btn-marcar-todos").addEventListener("click", async () => {
   const noLeidos = mensajesCache.filter(m => !m.leido).map(m => m.id);
   if (noLeidos.length === 0) return;
@@ -682,14 +629,10 @@ window.eliminarMensaje = async function(id) {
   cargarMensajes();
 };
 
-// =============================================
-// MENSAJES — VER DETALLE
-// =============================================
 window.abrirMensaje = async function(id) {
   const m = mensajesCache.find(x => x.id === id);
   if (!m) return;
 
-  // Marcar como leído automáticamente
   if (!m.leido) {
     await sb.from("mensajes").update({ leido: true }).eq("id", id);
     m.leido = true;
@@ -699,22 +642,10 @@ window.abrirMensaje = async function(id) {
 
   document.getElementById("modal-mensaje-body").innerHTML = `
     <div class="msg-meta">
-      <div class="msg-field">
-        <span class="msg-field-label">De</span>
-        <span class="msg-field-val">${escHtml(m.nombre)}</span>
-      </div>
-      <div class="msg-field">
-        <span class="msg-field-label">Email</span>
-        <span class="msg-field-val">${escHtml(m.email)}</span>
-      </div>
-      <div class="msg-field">
-        <span class="msg-field-label">Asunto</span>
-        <span class="msg-field-val">${escHtml(m.asunto)}</span>
-      </div>
-      <div class="msg-field">
-        <span class="msg-field-label">Fecha</span>
-        <span class="msg-field-val">${formatFecha(m.creado_en, true)}</span>
-      </div>
+      <div class="msg-field"><span class="msg-field-label">De</span><span class="msg-field-val">${escHtml(m.nombre)}</span></div>
+      <div class="msg-field"><span class="msg-field-label">Email</span><span class="msg-field-val">${escHtml(m.email)}</span></div>
+      <div class="msg-field"><span class="msg-field-label">Asunto</span><span class="msg-field-val">${escHtml(m.asunto)}</span></div>
+      <div class="msg-field"><span class="msg-field-label">Fecha</span><span class="msg-field-val">${formatFecha(m.creado_en, true)}</span></div>
     </div>
     <div class="msg-cuerpo">${escHtml(m.mensaje)}</div>
   `;
@@ -764,15 +695,11 @@ function formatFecha(iso, larga = false) {
 // =============================================
 function initRealtimeAdmin() {
   sb.channel("admin-pedidos")
-    .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, () => {
-      cargarPedidos();
-    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, () => cargarPedidos())
     .subscribe();
 
   sb.channel("admin-productos")
-    .on("postgres_changes", { event: "*", schema: "public", table: "productos" }, () => {
-      cargarProductos();
-    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "productos" }, () => cargarProductos())
     .subscribe();
 }
 
